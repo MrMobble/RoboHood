@@ -79,6 +79,17 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_Explode)
 	bool Explode;
 
+	//This Is The Variable That I Replicate
+	UPROPERTY(Replicated)
+	float Health;
+
+	/** called when projectile hits something */
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
+
 	//Self Explode Stuff
 	void ExplodeON();
 	void ExplodeOFF();

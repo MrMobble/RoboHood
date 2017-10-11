@@ -2,7 +2,9 @@
 
 #include "RoboHood.h"
 #include "TestHUD.h"
+#include "EngineMinimal.h"
 
-
-
+ATestHUD::ATestHUD()
+{
+}
 

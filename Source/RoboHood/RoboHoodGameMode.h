@@ -11,6 +11,8 @@ class ARoboHoodGameMode : public AGameModeBase
 	public:
 
 		ARoboHoodGameMode();
+
+		void RespawnPlayer();
 };
 
 

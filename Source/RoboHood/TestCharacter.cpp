@@ -3,6 +3,7 @@
 #include "RoboHood.h"
 #include "TestCharacter.h"
 #include "FireBall.h"
+#include "MyPlayerController.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -16,8 +17,12 @@ ATestCharacter::ATestCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	Health = 100.f;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+
+	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &ATestCharacter::OnHit);
 
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -91,6 +96,41 @@ void ATestCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ATestCharacter, Explode);
+	
+	DOREPLIFETIME(ATestCharacter, Health);
+}
+
+
+void ATestCharacter::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+}
+
+// This is the actor damage handler.   
+float ATestCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser)
+{
+	// Call the base class - this will tell us how much damage to apply  
+	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	if (ActualDamage > 0.f)
+	{
+		Health -= ActualDamage;
+		// If the damage depletes our health set our lifespan to zero - which will destroy the actor  
+		if (Health <= 0.f)
+		{
+			AMyPlayerController* PlayerController = Cast<AMyPlayerController>(Controller);
+			if (PlayerController)
+			{
+				PlayerController->OnKilled();
+
+				UE_LOG(LogTemp, Warning, TEXT("Killed"));
+			}
+
+			Destroy();
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("CurrentHealth %f"), Health);
+
+	return ActualDamage;
 }
 
 void ATestCharacter::ExplodeON()

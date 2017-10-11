@@ -12,8 +12,8 @@ UCLASS()
 class ROBOHOOD_API ATestHUD : public AHUD
 {
 	GENERATED_BODY()
-	
-	
+
+		ATestHUD();
 	
 	
 };

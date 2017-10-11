@@ -4,6 +4,7 @@
 #include "FireBall.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/DamageType.h"
 
 // Sets default values
 AFireBall::AFireBall()
@@ -39,6 +40,16 @@ void AFireBall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimiti
 	{
 		Explode();
 		Destroy();
+	}
+
+	if (OtherActor)
+	{
+		//UGameplayStatics::ApplyDamage(OtherActor, 10, nullptr, this, DamageType);
+		Explode();
+		Destroy();
+		FPointDamageEvent DmgEvent;
+
+		OtherActor->TakeDamage(20, DmgEvent, nullptr, this);
 	}
 }
 

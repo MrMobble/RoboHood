@@ -12,7 +12,7 @@ class ARoboHoodGameMode : public AGameModeBase
 
 		ARoboHoodGameMode();
 
-		void RespawnPlayer();
+		AActor* ChooseSpawnLocation(AController* Player);
 };
 
 

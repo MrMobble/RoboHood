@@ -120,39 +120,29 @@ float ATestCharacter::TakeDamage(float Damage, struct FDamageEvent const& Damage
 			if (PlayerController)
 			{
 				PlayerController->OnKilled();
-
-				UE_LOG(LogTemp, Warning, TEXT("Killed"));
 			}
-
 			Destroy();
 		}
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("CurrentHealth %f"), Health);
-
 	return ActualDamage;
 }
 
 void ATestCharacter::ExplodeON()
 {
-	Explode = true;
-	OnRep_Explode();
+	ServerExplode();
 }
 
 void ATestCharacter::ExplodeOFF()
 {
-	Explode = false;
+	ServerExplode();
+}
+
+void ATestCharacter::ServerExplode_Implementation() 
+{ 
+	//PlayerExplode(); 
+	Explode = !Explode;
 	OnRep_Explode();
 }
-
-void ATestCharacter::PlayerExplode()
-{
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplodeParticleSystem, GetActorTransform(), true);
-
-	if (Role < ROLE_Authority) { ServerExplode(); }
-}
-
-void ATestCharacter::ServerExplode_Implementation() { PlayerExplode(); }
 bool ATestCharacter::ServerExplode_Validate() { return true; }
 
 //I think this function is what tells the server to duplicate the variable maybe?
@@ -160,7 +150,7 @@ void ATestCharacter::OnRep_Explode()
 {
 	if (Explode)
 	{
-		PlayerExplode();
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplodeParticleSystem, GetActorTransform(), true);
 	}
 }
 
@@ -180,7 +170,7 @@ void ATestCharacter::SpawnFireBall()
 	FRotator CameraRotation = FollowCamera->ComponentToWorld.GetRotation().Rotator();
 
 	FVector LineTraceStart = CameraLocation;
-	FVector LineTraceEnd = (UKismetMathLibrary::GetForwardVector(CameraRotation) * 5000) + CameraLocation;
+	FVector LineTraceEnd = (UKismetMathLibrary::GetForwardVector(CameraRotation) * 10000) + CameraLocation;
 
 	//LineTrace Towards The Forward Vector Of The Camera Not The Player
 	FHitResult LineTrace = WeaponTrace(LineTraceStart, LineTraceEnd);

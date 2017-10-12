@@ -5,7 +5,9 @@
 #include "TestCharacter.h"
 #include "TestHUD.h"
 #include "MyPlayerController.h"
+#include "PlayerSpawnPoint.h"
 
+#include "Public/EngineUtils.h"
 ARoboHoodGameMode::ARoboHoodGameMode()
 {
 	// set default pawn class to our Blueprinted character
@@ -28,11 +30,17 @@ ARoboHoodGameMode::ARoboHoodGameMode()
 
 }
 
-void ARoboHoodGameMode::RespawnPlayer()
+AActor * ARoboHoodGameMode::ChooseSpawnLocation(AController * Player)
 {
-	//Set Spawn Collision Handling Override
-	FActorSpawnParameters ActorSpawnParams;
-	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	if (Player)
+	{
+		TArray<APlayerSpawnPoint*> SpawnPoints;
+		for (TActorIterator<APlayerSpawnPoint> StartItr(GetWorld()); StartItr; ++StartItr)
+		{
+			SpawnPoints.Add(*StartItr);
+		}
 
-	GetWorld()->SpawnActor<APawn>(DefaultPawnClass, FVector(0,0,0), FRotator(0, 0, 0), ActorSpawnParams);
+		return SpawnPoints[FMath::RandRange(0, 4)];
+	}
+	return nullptr;
 }

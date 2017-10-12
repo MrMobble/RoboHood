@@ -20,6 +20,12 @@ class ROBOHOOD_API AMyPlayerController : public APlayerController
 		void OnKilled();
 
 		void OnRespawn();
+
+		/* Enum is remapped to localized text before sending it to the HUD */
+		UFUNCTION(Reliable, Client)
+		void ClientHUDMessage();
+
+		void ClientHUDMessage_Implementation();
 	
 	
 };

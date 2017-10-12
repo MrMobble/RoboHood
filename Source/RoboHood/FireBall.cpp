@@ -24,10 +24,10 @@ AFireBall::AFireBall()
 	ProjectileMovement->bShouldBounce = true;
 	ProjectileMovement->SetIsReplicated(true);
 
-	RootComponent = ArrowHeadComponent;
-
 	//SetUp StaticMeshes
 	ArrowHeadComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Arrow_Head"));
+
+	RootComponent = ArrowHeadComponent;
 
 	ArrowHeadComponent->OnComponentHit.AddDynamic(this, &AFireBall::OnHit);
 	// Die after 3 seconds by default
@@ -44,7 +44,6 @@ void AFireBall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimiti
 
 	if (OtherActor)
 	{
-		//UGameplayStatics::ApplyDamage(OtherActor, 10, nullptr, this, DamageType);
 		Explode();
 		Destroy();
 		FPointDamageEvent DmgEvent;

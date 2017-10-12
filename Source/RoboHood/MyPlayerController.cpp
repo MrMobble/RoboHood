@@ -5,10 +5,13 @@
 #include "GameFramework/GameMode.h"
 #include "GameFramework/Actor.h"
 #include "RoboHoodGameMode.h"
+#include "TestHUD.h"
 
 void AMyPlayerController::OnKilled()
 {
 	UnPossess();
+
+	ClientHUDMessage();
 
 	GetWorldTimerManager().SetTimer(Timehandle_Respawn, this, &AMyPlayerController::OnRespawn, 5.f);
 
@@ -16,18 +19,19 @@ void AMyPlayerController::OnKilled()
 
 void AMyPlayerController::OnRespawn()
 {
-	//AGameMode* GameMode = Cast<AGameMode>(GetWorld()->GetAuthGameMode());
-
 	ARoboHoodGameMode* const MyGameMode = GetWorld()->GetAuthGameMode<ARoboHoodGameMode>();
 	if (MyGameMode)
 	{
-		APawn* NewPawn = MyGameMode->SpawnDefaultPawnFor(this, StartSpot.Get());
+		APawn* NewPawn = MyGameMode->SpawnDefaultPawnFor(this, MyGameMode->ChooseSpawnLocation(this));
 		Possess(NewPawn);
-
-		UE_LOG(LogTemp, Warning, TEXT("Respawned"));
 	}
-	else
+}
+
+void AMyPlayerController::ClientHUDMessage_Implementation()
+{
+	ATestHUD* HUD = Cast<ATestHUD>(GetHUD());
+	if (HUD)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Respawn Fail"));
+		HUD->RespawnTextAdd();
 	}
 }

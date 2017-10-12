@@ -91,10 +91,8 @@ public:
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
 
 	//Self Explode Stuff
-	void ExplodeON();
+	void ExplodeON(); //This Calls The Server Function, The server Function changes the explode bool then calls OnRep_Explode.
 	void ExplodeOFF();
-
-	void PlayerExplode();
 
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerExplode();
@@ -114,10 +112,5 @@ public:
 	bool ServerSpawnFireBall_Validate();
 
 	FHitResult WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const;
-
-
-
-private:
-
 	
 };

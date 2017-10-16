@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-
 #include "GameFramework/Character.h"
 #include "TestCharacter.generated.h"
 
@@ -10,29 +9,38 @@ class ROBOHOOD_API ATestCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-	/** Camera boom positioning the camera behind the character */
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+
+	//CameraBoom
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 
-	/** Follow camera */
+	//Camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
-	/** Projectile class to spawn */
-	UPROPERTY(EditDefaultsOnly, Category = Projectile)
+	//Projectile
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
 	TSubclassOf<class AFireBall> FireBall;
 
+	//Particle Effect
+	UPROPERTY(EditDefaultsOnly, Category = "Particles", Meta = (BlueprintProtected = "true"))
+	UParticleSystem* Particle;
+
+	//Attach Point For The Weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Sockets")
+	FName WeaponAttachPoint;
+
+	//The Players Weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	TSubclassOf<class AWeapon> DefaultWeapon;
+
 public:
 
-	//Particle system variable
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Particles", Meta = (BlueprintProtected = "true"))
-	class UParticleSystemComponent* ParticleSystem;
-	UParticleSystem* ExplodeParticleSystem;
-
-public:
-
-	// Sets default values for this character's properties
+	//Basic Constructor
 	ATestCharacter();
+
+public:
 
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
@@ -44,26 +52,18 @@ public:
 
 protected:
 
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-	/** Called for forwards/backward input */
+	//Movement Functions
 	void MoveForward(float Value);
-
-	/** Called for side to side input */
 	void MoveRight(float Value);
-
 	void TurnAtRate(float Rate);
-
 	void LookUpAtRate(float Rate);
 
 public:	
 
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	virtual void PostInitializeComponents();
 
 public:
 
@@ -76,41 +76,49 @@ public:
 public:
 
 	//This Is The Variable That I Replicate
-	UPROPERTY(ReplicatedUsing = OnRep_Explode)
-	bool Explode;
-
-	//This Is The Variable That I Replicate
 	UPROPERTY(Replicated)
 	float Health;
 
-	/** called when projectile hits something */
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	bool bWantsToFire;
+
+	/* Mapped to input */
+	void OnStartFire();
+
+	/* Mapped to input */
+	void OnStopFire();
+
+	void StartWeaponFire();
+
+	void StopWeaponFire();
+
+
+
 
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
 
-	//Self Explode Stuff
-	void ExplodeON(); //This Calls The Server Function, The server Function changes the explode bool then calls OnRep_Explode.
-	void ExplodeOFF();
+	void EquipWeapon(AWeapon* TheWeapon);
 
 	UFUNCTION(Reliable, Server, WithValidation)
-	void ServerExplode();
-	void ServerExplode_Implementation();
-	bool ServerExplode_Validate();
+	void ServerEquipWeapon(AWeapon* TheWeapon);
+	void ServerEquipWeapon_Implementation(AWeapon* TheWeapon);
+	bool ServerEquipWeapon_Validate(AWeapon* TheWeapon);
 
+
+	void SpawnDefaultWeapon();
+
+	/* OnRep functions can use a parameter to hold the previous value of the variable. Very useful when you need to handle UnEquip etc. */
 	UFUNCTION()
-	void OnRep_Explode();
+	void OnRep_CurrentWeapon();
+
+	void SetCurrentWeapon(class AWeapon* NewWeapon);
+
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_CurrentWeapon)
+	class AWeapon* CurrentWeapon;
 
 
-	//FireBall Stuff
-	void SpawnFireBall();
 
-	UFUNCTION(Reliable, Server, WithValidation)
-	void ServerSpawnFireBall();
-	void ServerSpawnFireBall_Implementation();
-	bool ServerSpawnFireBall_Validate();
+	FName GetWeaponAttachPoint();
 
-	FHitResult WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const;
 	
 };

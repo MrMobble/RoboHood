@@ -4,6 +4,7 @@
 #include "TestCharacter.h"
 #include "FireBall.h"
 #include "MyPlayerController.h"
+#include "Weapon.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -21,8 +22,6 @@ ATestCharacter::ATestCharacter()
 
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-
-	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &ATestCharacter::OnHit);
 
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -50,13 +49,7 @@ ATestCharacter::ATestCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	//FireBall Constructor
-	static ConstructorHelpers::FClassFinder<AFireBall> FireBallProjectile(TEXT("/Game/MyFireBall"));
-	if (FireBallProjectile.Succeeded()) { FireBall = FireBallProjectile.Class; }
-
-	//Explode SFX COnstructor
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> ExplosionEffect (TEXT("/Game/StarterContent/Particles/P_Explosion"));
-	if (ExplosionEffect.Succeeded()) { ExplodeParticleSystem = ExplosionEffect.Object; }
+	bReplicates = true;
 
 }
 
@@ -83,160 +76,140 @@ void ATestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("LookUpRate", this, &ATestCharacter::LookUpAtRate);
 
 	//Explode Input
-	PlayerInputComponent->BindAction("LeftMouse", IE_Pressed, this, &ATestCharacter::ExplodeON);
-	PlayerInputComponent->BindAction("LeftMouse", IE_Released, this, &ATestCharacter::ExplodeOFF);
+	PlayerInputComponent->BindAction("LeftMouse", IE_Pressed, this, &ATestCharacter::OnStartFire);
+	PlayerInputComponent->BindAction("LeftMouse", IE_Released, this, &ATestCharacter::OnStopFire);
 
 	//Fireball Input
-	PlayerInputComponent->BindAction("RightMouse", IE_Pressed, this, &ATestCharacter::SpawnFireBall);
+	//PlayerInputComponent->BindAction("RightMouse", IE_Pressed, this, &ATestCharacter::BeginFire);
+	//PlayerInputComponent->BindAction("RightMouse", IE_Released, this, &ATestCharacter::EndFire);
 }
 
 //This Function Is Part of the multiplayer framework and replicated variables between server and clients
 void ATestCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ATestCharacter, Explode);
 	
 	DOREPLIFETIME(ATestCharacter, Health);
+
+	DOREPLIFETIME(ATestCharacter, CurrentWeapon);
+
 }
 
-
-void ATestCharacter::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+void ATestCharacter::PostInitializeComponents()
 {
-}
+	Super::PostInitializeComponents();
 
-// This is the actor damage handler.   
-float ATestCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser)
-{
-	// Call the base class - this will tell us how much damage to apply  
-	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
-	if (ActualDamage > 0.f)
+	UE_LOG(LogTemp, Warning, TEXT("PostInit Called"));
+
+	if (Role == ROLE_Authority)
 	{
-		Health -= ActualDamage;
-		// If the damage depletes our health set our lifespan to zero - which will destroy the actor  
-		if (Health <= 0.f)
-		{
-			AMyPlayerController* PlayerController = Cast<AMyPlayerController>(Controller);
-			if (PlayerController)
-			{
-				PlayerController->OnKilled();
-			}
-			Destroy();
-		}
-	}
-	return ActualDamage;
-}
-
-void ATestCharacter::ExplodeON()
-{
-	ServerExplode();
-}
-
-void ATestCharacter::ExplodeOFF()
-{
-	ServerExplode();
-}
-
-void ATestCharacter::ServerExplode_Implementation() 
-{ 
-	//PlayerExplode(); 
-	Explode = !Explode;
-	OnRep_Explode();
-}
-bool ATestCharacter::ServerExplode_Validate() { return true; }
-
-//I think this function is what tells the server to duplicate the variable maybe?
-void ATestCharacter::OnRep_Explode()
-{
-	if (Explode)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplodeParticleSystem, GetActorTransform(), true);
+		UE_LOG(LogTemp, Warning, TEXT("SpawnWeapon Called"));
+		SpawnDefaultWeapon();
 	}
 }
 
-void ATestCharacter::SpawnFireBall()
+void ATestCharacter::SpawnDefaultWeapon()
 {
-	// try and fire a projectile
 	if (Role < ROLE_Authority)
 	{
-		ServerSpawnFireBall();
 		return;
 	}
 
-	//OK So Here A Need To Do Some BS Calculations To Shoot Towards To CrossHair :/
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	//Variables
-	FVector CameraLocation = FollowCamera->ComponentToWorld.GetLocation();
-	FRotator CameraRotation = FollowCamera->ComponentToWorld.GetRotation().Rotator();
+	AWeapon* NewWeapon = GetWorld()->SpawnActor<AWeapon>(DefaultWeapon, SpawnInfo);
 
-	FVector LineTraceStart = CameraLocation;
-	FVector LineTraceEnd = (UKismetMathLibrary::GetForwardVector(CameraRotation) * 10000) + CameraLocation;
+	UE_LOG(LogTemp, Warning, TEXT("SpawnWeapon Completed"));
 
-	//LineTrace Towards The Forward Vector Of The Camera Not The Player
-	FHitResult LineTrace = WeaponTrace(LineTraceStart, LineTraceEnd);
+	EquipWeapon(NewWeapon);
 
-	//Set Spawn Collision Handling Override
-	FActorSpawnParameters ActorSpawnParams;
-	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+}
 
-	const FRotator SpawnRotation = GetControlRotation();
-	const FVector SpawnLocation = GetActorLocation();
-	const FVector ForwardVec = GetActorForwardVector();
-	const FVector OffSet = (ForwardVec * 60) + (SpawnLocation + FVector(0, 0, 50));
-
-	if (LineTrace.bBlockingHit)
+void ATestCharacter::EquipWeapon(AWeapon* TheWeapon)
+{
+	if (TheWeapon)
 	{
-		FVector InpactPoint = LineTrace.ImpactPoint;
-		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(OffSet, InpactPoint);
-
-		// spawn the projectile at the muzzle
-		GetWorld()->SpawnActor<AFireBall>(FireBall, OffSet, LookAtRotation, ActorSpawnParams);
+		if (Role == ROLE_Authority)
+		{
+			SetCurrentWeapon(TheWeapon);
+		}
+		else
+		{
+			ServerEquipWeapon(TheWeapon);
+		}
 	}
-	else
+}
+
+void ATestCharacter::ServerEquipWeapon_Implementation(AWeapon* TheWeapon)
+{
+	EquipWeapon(TheWeapon);
+}
+
+bool ATestCharacter::ServerEquipWeapon_Validate(AWeapon* TheWeapon)
+{
+	return true;
+}
+
+void ATestCharacter::OnRep_CurrentWeapon()
+{
+	SetCurrentWeapon(CurrentWeapon);
+}
+
+void ATestCharacter::SetCurrentWeapon(class AWeapon* NewWeapon)
+{
+	CurrentWeapon = NewWeapon;
+
+	if (NewWeapon)
 	{
-		FVector LineTraceEndTwo = (UKismetMathLibrary::GetForwardVector(CameraRotation) * 3000) + CameraLocation;
-		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(OffSet, LineTraceEndTwo);
-
-		// spawn the projectile at the muzzle
-		GetWorld()->SpawnActor<AFireBall>(FireBall, OffSet, LookAtRotation, ActorSpawnParams);
+		//Need To Implament These
+		NewWeapon->SetOwningPawn(this);
+	    NewWeapon->OnEquip();
 	}
-			
 }
 
-FHitResult ATestCharacter::WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const
+FName ATestCharacter::GetWeaponAttachPoint()
 {
-	FCollisionQueryParams TraceParams(TEXT("WeaponTrace"), true, Instigator);
-	TraceParams.bTraceAsyncScene = true;
-	TraceParams.bReturnPhysicalMaterial = true;
-
-	FHitResult Hit(ForceInit);
-	GetWorld()->LineTraceSingleByChannel(Hit, TraceFrom, TraceTo, ECC_WorldStatic, TraceParams);
-
-	return Hit;
+	return WeaponAttachPoint;
 }
 
-void ATestCharacter::ServerSpawnFireBall_Implementation() { SpawnFireBall(); }
-bool ATestCharacter::ServerSpawnFireBall_Validate() { return true; }
 
-//-----------------------------------------------------------------------------------------------------//
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Default Functions
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// Called when the game starts or when spawned
-void ATestCharacter::BeginPlay()
+void ATestCharacter::OnStartFire()
 {
-	Super::BeginPlay();
+	StartWeaponFire();
 }
 
-// Called every frame
-void ATestCharacter::Tick(float DeltaTime)
+
+void ATestCharacter::OnStopFire()
 {
-	Super::Tick(DeltaTime);
+	StopWeaponFire();
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ATestCharacter::StartWeaponFire()
+{
+	if (!bWantsToFire)
+	{
+		bWantsToFire = true;
+		if (CurrentWeapon)
+		{
+			CurrentWeapon->StartFire();
+		}
+	}
+}
+
+
+void ATestCharacter::StopWeaponFire()
+{
+	if (bWantsToFire)
+	{
+		bWantsToFire = false;
+		if (CurrentWeapon)
+		{
+			CurrentWeapon->StopFire();
+		}
+	}
+}
 
 //-----------------------------------------------------------------------------------------------------//
 
@@ -290,3 +263,55 @@ void ATestCharacter::MoveRight(float Value)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// This is the actor damage handler.   
+float ATestCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser)
+{
+	// Call the base class - this will tell us how much damage to apply  
+	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	if (ActualDamage > 0.f)
+	{
+		Health -= ActualDamage;
+		// If the damage depletes our health set our lifespan to zero - which will destroy the actor  
+		if (Health <= 0.f)
+		{
+			AMyPlayerController* PlayerController = Cast<AMyPlayerController>(Controller);
+			if (PlayerController)
+			{
+				PlayerController->OnKilled();
+			}
+
+			CurrentWeapon->RemoveWeapon();
+			Destroy();
+
+		}
+	}
+	return ActualDamage;
+}
+
+//void ATestCharacter::ExplodeON()
+//{
+//	ServerExplode();
+//}
+//
+//void ATestCharacter::ExplodeOFF()
+//{
+//	ServerExplode();
+//}
+//
+//void ATestCharacter::ServerExplode_Implementation()
+//{
+//	Explode = !Explode;
+//	OnRep_Explode();
+//}
+//bool ATestCharacter::ServerExplode_Validate() { return true; }
+//
+////I think this function is what tells the server to duplicate the variable maybe?
+//void ATestCharacter::OnRep_Explode()
+//{
+//	if (Explode)
+//	{
+//		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Particle, GetActorTransform(), true);
+//	}
+//}
+

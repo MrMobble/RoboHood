@@ -5,15 +5,13 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/DamageType.h"
+#include "Templates/SharedPointer.h"
 
 // Sets default values
 AFireBall::AFireBall()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> ExplosionEffect (TEXT("/Game/StarterContent/Particles/P_Explosion"));
-	ParticleSystemTemplate = ExplosionEffect.Object;
 
 	// Use a ProjectileMovementComponent to govern this projectile's movement
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
@@ -25,29 +23,28 @@ AFireBall::AFireBall()
 	ProjectileMovement->SetIsReplicated(true);
 
 	//SetUp StaticMeshes
-	ArrowHeadComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Arrow_Head"));
+	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
+	SphereComponent->SetSphereRadius(6.f);
 
-	RootComponent = ArrowHeadComponent;
+	RootComponent = SphereComponent;
 
-	ArrowHeadComponent->OnComponentHit.AddDynamic(this, &AFireBall::OnHit);
+	SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AFireBall::OnOverlapBegin);
+	SphereComponent->IgnoreActorWhenMoving(GetInstigator(), true);
+
 	// Die after 3 seconds by default
-	InitialLifeSpan = 10.0f;
+	InitialLifeSpan = 5.f;
 }
 
-void AFireBall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+void AFireBall::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor != this)
-	{
-		Explode();
-		Destroy();
-	}
 
-	if (OtherActor)
+	if (OtherActor != GetInstigator() && OtherActor != this)
 	{
+
 		Explode();
 		Destroy();
+
 		FPointDamageEvent DmgEvent;
-
 		OtherActor->TakeDamage(20, DmgEvent, nullptr, this);
 	}
 }
@@ -64,7 +61,7 @@ void AFireBall::Explode()
 
 void AFireBall::SimulateExplosion_Implementation()
 {
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ParticleSystemTemplate, GetActorTransform(), true);
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Particle, GetActorTransform(), true);
 }
 
 // Called when the game starts or when spawned
@@ -77,6 +74,5 @@ void AFireBall::BeginPlay()
 void AFireBall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 

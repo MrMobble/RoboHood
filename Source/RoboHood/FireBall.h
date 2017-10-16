@@ -15,20 +15,23 @@ public:
 	// Sets default values for this actor's properties
 	AFireBall();
 
+protected:
+
 	/** Projectile movement component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	class UProjectileMovementComponent* ProjectileMovement;
 
-	/** Arrow_Head Component */
+	/** Sphere Component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-	class UStaticMeshComponent* ArrowHeadComponent;
-
-	//Particle system variable
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Particles", Meta = (BlueprintProtected = "true"))
-	class UParticleSystemComponent* ParticleSystem;
-	UParticleSystem* ParticleSystemTemplate;
+	class USphereComponent* SphereComponent;
 
 	UPrimitiveComponent* CollisionComp;
+
+public:
+
+	UPROPERTY(EditDefaultsOnly, Category = "Particles", Meta = (BlueprintProtected = "true"))
+	UParticleSystem* Particle;
+
 
 protected:
 
@@ -43,12 +46,9 @@ public:
 	/** Returns ProjectileMovement subobject **/
 	FORCEINLINE class UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
 
-	/** called when projectile hits something */
+	/** Called when projectile hits something */
 	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
-	UPROPERTY(EditDefaultsOnly, Category = "Bomb|Settings")
-	TSubclassOf<UDamageType> DamageType;
+		void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	//Client Side Function
 	void Explode();
@@ -57,6 +57,7 @@ public:
 	UFUNCTION(Reliable, NetMulticast)
 	void SimulateExplosion();
 	void SimulateExplosion_Implementation();
+
 	virtual void Destroyed();
 
 	

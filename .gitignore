@@ -11,3 +11,7 @@ Saved
 *.xcodeproj
 *.xcworkspace
 *.ipch
+Build/WindowsNoEditor/FileOpenOrder/EditorOpenOrder.log
+Build/WindowsNoEditor/FileOpenOrder/CookerOpenOrder.log
+.vs/RoboHood/v15/Solution.VC.db-wal
+.vs/RoboHood/v15/Solution.VC.db-shm

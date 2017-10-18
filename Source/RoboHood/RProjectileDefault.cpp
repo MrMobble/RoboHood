@@ -5,17 +5,15 @@
 #include "GameFramework/DamageType.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 
-void ARProjectileDefault::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+void ARProjectileDefault::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor != this)
+	if (OtherActor != this && OtherActor != GetInstigator())
 	{
-		RProjectileDeathEffect();
 		Destroy();
 	}
 
-	if (OtherActor)
+	if (OtherActor != GetInstigator())
 	{
-		RProjectileDeathEffect();
 		Destroy();
 
 		FPointDamageEvent DmgEvent;
@@ -23,7 +21,7 @@ void ARProjectileDefault::OnHit(UPrimitiveComponent* HitComponent, AActor* Other
 	}
 }
 
-void ARProjectileDefault::RProjectileDeathEffect_Implementation()
+void ARProjectileDefault::ProjectileDeathEffect_Implementation()
 {
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjectileDeathParticle, GetActorTransform(), true);
 }

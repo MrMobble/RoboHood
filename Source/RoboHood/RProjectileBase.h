@@ -11,47 +11,46 @@ class ROBOHOOD_API ARProjectileBase : public AActor
 	GENERATED_BODY()
 
 public:
+
 	// Sets default values for this actor's properties
 	ARProjectileBase();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
-		float InitialSpeed;
-		float MaxSpeed;
-		bool Bounce;
-		float Bounciness;
-		bool Sticky;
+	bool Sticky;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
-		UParticleSystem* ProjectileDeathParticle;
+	UParticleSystem* ProjectileDeathParticle;
 
 	/** Returns ProjectileMovement subobject **/
 	FORCEINLINE class UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
 
 protected:
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	/** Projectile movement component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-		class UProjectileMovementComponent* ProjectileMovement;
+	class UProjectileMovementComponent* ProjectileMovement;
 
 	/** Sphere Component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-		class USphereComponent* CollisionSphereComponent;
+	class USphereComponent* CollisionSphereComponent;
 
 
 
 	UFUNCTION()
-		virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit) {}
+	virtual void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {}
 
 public:
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	//Server Functions
 	UFUNCTION(Reliable, NetMulticast)
-		virtual void RProjectileDeathEffect();
-		virtual void RProjectileDeathEffect_Implementation();
+	virtual void ProjectileDeathEffect();
+	virtual void ProjectileDeathEffect_Implementation() {}
 
-		virtual void Destroyed();
+	virtual void Destroyed();
 };

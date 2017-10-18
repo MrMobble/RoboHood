@@ -27,11 +27,11 @@ public:
 	ARWeapon();
 
 	//Projectile.
-	//UPROPERTY(EditDefaultsOnly, Category = "Projectile")
-	//TSubclassOf<class AFireBall> FireBall;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	TSubclassOf<class ARProjectileBase> Projectile;
 
 	//FireRate.
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
 	float TimeBetweenShots;
 
 	//Called From Player Sets MyPawn

@@ -13,11 +13,12 @@ ARProjectileBase::ARProjectileBase()
 	// Setting up the Projectile Movement Component
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
 	ProjectileMovement->UpdatedComponent = GetRootComponent();
-	ProjectileMovement->InitialSpeed = InitialSpeed;
-	ProjectileMovement->MaxSpeed = MaxSpeed;
-	ProjectileMovement->bShouldBounce = Bounce;
-	ProjectileMovement->Bounciness = Bounciness;
-	ProjectileMovement->SetIsReplicated(true);
+	ProjectileMovement->ProjectileGravityScale = 0.f;
+	ProjectileMovement->InitialSpeed = 500.f;
+	ProjectileMovement->MaxSpeed = 500.f;
+	ProjectileMovement->bShouldBounce = false;
+	ProjectileMovement->Bounciness = 0.f;
+	//ProjectileMovement->SetIsReplicated(true);
 
 	// Bool for sticky projectiles
 	Sticky = false;
@@ -28,7 +29,7 @@ ARProjectileBase::ARProjectileBase()
 
 	RootComponent = CollisionSphereComponent;
 
-	CollisionSphereComponent->OnComponentHit.AddDynamic(this, &ARProjectileBase::OnHit);
+	CollisionSphereComponent->OnComponentBeginOverlap.AddDynamic(this, &ARProjectileBase::OnOverlapBegin);
 	CollisionSphereComponent->IgnoreActorWhenMoving(GetInstigator(), true);
 }
 
@@ -44,12 +45,7 @@ void ARProjectileBase::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void ARProjectileBase::RProjectileDeathEffect_Implementation()
-{
-
-}
-
 void ARProjectileBase::Destroyed()
 {
-	RProjectileDeathEffect();
+	ProjectileDeathEffect();
 }

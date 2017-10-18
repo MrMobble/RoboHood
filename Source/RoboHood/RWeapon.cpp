@@ -6,7 +6,7 @@
 //Other Classes
 #include "RCharacter.h"
 #include "RPlayerController.h"
-//#include "FireBall.h"
+#include "RProjectileBase.h"
 
 //Other Includes
 #include "Components/SceneComponent.h"
@@ -188,14 +188,14 @@ void ARWeapon::FireWeapon()
 	{
 		FVector InpactPoint = LineTrace.ImpactPoint;
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(OffSet, InpactPoint);
-		//GetWorld()->SpawnActor<AFireBall>(FireBall, SpawnLocation, LookAtRotation, ActorSpawnParams);
+		GetWorld()->SpawnActor<ARProjectileBase>(Projectile, SpawnLocation, LookAtRotation, ActorSpawnParams);
 
 	}
 	else
 	{
 		FVector LineTraceEndTwo = (UKismetMathLibrary::GetForwardVector(CameraRotation) * 3000) + CameraLocation;
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(OffSet, LineTraceEndTwo);
-		//GetWorld()->SpawnActor<AFireBall>(FireBall, SpawnLocation, LookAtRotation, ActorSpawnParams);
+		GetWorld()->SpawnActor<ARProjectileBase>(Projectile, SpawnLocation, LookAtRotation, ActorSpawnParams);
 
 	}
 }

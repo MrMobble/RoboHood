@@ -12,6 +12,7 @@
 #include "Components/SceneComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "GameFramework/Character.h"
 
 //Default Constructor
 ARWeapon::ARWeapon()
@@ -19,7 +20,7 @@ ARWeapon::ARWeapon()
 	//Set This Character To Call Tick() Every Frame.  You Can Turn This Off To Improve Performance If You Don't Need It.
 	PrimaryActorTick.bCanEverTick = false;
 
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	Mesh->CastShadow = true;
 	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -28,6 +29,12 @@ ARWeapon::ARWeapon()
 	RootComponent = Mesh;
 
 	bIsEquipped = false;
+	bIsReloading = false;
+
+	MaxAmmo = 20;
+	CurrentAmmo = 20;
+
+	RechargeWeapon();
 }
 
 void ARWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -133,7 +140,16 @@ void ARWeapon::HandleFiring()
 	{
 		if (MyPawn && MyPawn->IsLocallyControlled())
 		{
-			FireWeapon();
+			if (CurrentAmmo > 0)
+			{
+				FireWeapon();
+
+				UseAmmo();
+			}
+			else
+			{
+				StartRecharge();
+			}
 		}
 	}
 
@@ -151,7 +167,18 @@ void ARWeapon::HandleFiring()
 	LastFireTime = GetWorld()->GetTimeSeconds();
 }
 
-void ARWeapon::ServerHandleFiring_Implementation() { HandleFiring(); }
+void ARWeapon::ServerHandleFiring_Implementation() 
+{ 
+
+	const bool bShouldUpdateAmmo = (CurrentAmmo > 0 && CanFire());
+
+	HandleFiring(); 
+
+	if (bShouldUpdateAmmo)
+	{
+		UseAmmo();
+	}
+}
 
 bool ARWeapon::ServerHandleFiring_Validate() { return true; }
 
@@ -179,23 +206,21 @@ void ARWeapon::FireWeapon()
 	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	ActorSpawnParams.Instigator = MyPawn;
 
-	const FRotator SpawnRotation = MyPawn->GetControlRotation();
-	const FVector SpawnLocation = GetActorLocation();
-	const FVector ForwardVec = GetActorForwardVector();
-	const FVector OffSet = (ForwardVec * 60) + (SpawnLocation + FVector(0, 0, 50));
+	//This is the position on the muzzle
+	FVector MuzzlePosition = Mesh->GetBoneLocation("joint2", EBoneSpaces::WorldSpace);
 
 	if (LineTrace.bBlockingHit)
 	{
 		FVector InpactPoint = LineTrace.ImpactPoint;
-		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(OffSet, InpactPoint);
-		GetWorld()->SpawnActor<ARProjectileBase>(Projectile, SpawnLocation, LookAtRotation, ActorSpawnParams);
+		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(MuzzlePosition, InpactPoint);
+		GetWorld()->SpawnActor<ARProjectileBase>(Projectile, MuzzlePosition, LookAtRotation, ActorSpawnParams);
 
 	}
 	else
 	{
 		FVector LineTraceEndTwo = (UKismetMathLibrary::GetForwardVector(CameraRotation) * 3000) + CameraLocation;
-		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(OffSet, LineTraceEndTwo);
-		GetWorld()->SpawnActor<ARProjectileBase>(Projectile, SpawnLocation, LookAtRotation, ActorSpawnParams);
+		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(MuzzlePosition, LineTraceEndTwo);
+		GetWorld()->SpawnActor<ARProjectileBase>(Projectile, MuzzlePosition, LookAtRotation, ActorSpawnParams);
 
 	}
 }
@@ -251,7 +276,11 @@ void ARWeapon::DetermineWeaponState()
 
 	if (bIsEquipped)
 	{
-		if (bWantsToFire && CanFire())
+		if (bIsReloading)
+		{
+			NewState = EWeaponState::Recharging;
+		}
+		else if (bWantsToFire && CanFire())
 		{
 			NewState = EWeaponState::Firing;
 		}
@@ -280,4 +309,36 @@ void ARWeapon::SetWeaponState(EWeaponState NewState)
 EWeaponState ARWeapon::GetCurrentState() const
 {
 	return CurrentState;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Weapon Ammo Functions
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ARWeapon::UseAmmo()
+{
+	CurrentAmmo--;
+
+	UE_LOG(LogTemp, Warning, TEXT("CurrentAmmo: %d"), CurrentAmmo);
+}
+
+void ARWeapon::StartRecharge()
+{
+	bIsReloading = true;
+	DetermineWeaponState();
+
+	GetWorldTimerManager().SetTimer(TimerHandle_ReloadWeapon, this, &ARWeapon::RechargeWeapon, ReloadWeaponTime, false);
+}
+
+void ARWeapon::StopRecharge()
+{
+	bIsReloading = false;
+	DetermineWeaponState();
+}
+
+void ARWeapon::RechargeWeapon()
+{
+	CurrentAmmo = MaxAmmo;
+
+	StopRecharge();
 }

@@ -78,6 +78,9 @@ void ARCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	//FireWeapon Input
 	PlayerInputComponent->BindAction("LeftMouse", IE_Pressed, this, &ARCharacter::OnStartFire);
 	PlayerInputComponent->BindAction("LeftMouse", IE_Released, this, &ARCharacter::OnStopFire);
+
+	//Reload Input
+	PlayerInputComponent->BindAction("Reload", IE_Released, this, &ARCharacter::ReloadWeapon);
 }
 
 //This Function Is Part of the Multiplayer Framework And Replicated Variables Between Server And Clients
@@ -95,7 +98,13 @@ void ARCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	if (Role == ROLE_Authority) { SpawnDefaultWeapon(); }
+	if (Role == ROLE_Authority) 
+	{ 
+		if (DefaultWeapon)
+		{
+			SpawnDefaultWeapon();
+		}
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -220,6 +229,8 @@ void ARCharacter::SetCurrentWeapon(class ARWeapon* NewWeapon)
 
 FName ARCharacter::GetWeaponAttachPoint() { return WeaponAttachPoint; }
 
+ARWeapon* ARCharacter::GetCurrentWeapon() { return CurrentWeapon; }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ShootWeapon Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -243,5 +254,13 @@ void ARCharacter::StopWeaponFire()
 	{
 		bWantsToFire = false;
 		if (CurrentWeapon) { CurrentWeapon->StopFire(); }
+	}
+}
+
+void ARCharacter::ReloadWeapon()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->StartRecharge();
 	}
 }

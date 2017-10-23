@@ -9,7 +9,7 @@ enum class EWeaponState : uint8
 {
 	Idle,
 	Firing,
-	OverHeating
+	Recharging
 };
 
 UCLASS()
@@ -51,7 +51,7 @@ protected:
 
 	//This Is The Mesh For The Weapon (Change To SkeletalMesh When We Get Assets)
 	UPROPERTY(VisibleDefaultsOnly, Category = "Mesh")
-	UStaticMeshComponent* Mesh;
+	USkeletalMeshComponent* Mesh;
 
 	//OnRep Function
 	UFUNCTION()
@@ -150,7 +150,49 @@ private:
 	//Checks If The Player Can Fire
 	bool CanFire() const;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Weapon Ammo Functions And Variables
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+public:
+
+	virtual void StartRecharge();
+
+	//Weapons Current Ammo Replicated
+	UPROPERTY(Transient, Replicated)
+	int32 CurrentAmmo;
+
+	//MaxHeat
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	int32 MaxAmmo;
+
+	//ReloadTime
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	float ReloadWeaponTime;
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetCurrentAmmo() { return CurrentAmmo; }
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetMaxAmmo() { return MaxAmmo; }
+
+	UFUNCTION(BlueprintCallable)
+	bool GetIsReloading() { return bIsReloading; }
+
+protected:
+
+	void UseAmmo();
+
+	void StopRecharge();
+
+	void RechargeWeapon();
+
+	bool bIsReloading;
 	
+private:
+
+	FTimerHandle TimerHandle_ReloadWeapon;
+
+
 	
 };

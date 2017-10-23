@@ -56,6 +56,9 @@ public:
 	UPROPERTY(Replicated)
 	float Health;
 
+	UFUNCTION(BlueprintCallable)
+	float GetHealth() { return Health; }
+
 private:
 
 	//CameraBoom
@@ -101,9 +104,11 @@ public:
 
 	void SetCurrentWeapon(class ARWeapon* NewWeapon);
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	ARWeapon* GetCurrentWeapon();
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Shoot Functions And Variables
+// Shoot/Reload Functions And Variables
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 public:
@@ -122,5 +127,7 @@ public:
 
 	//Tells The Weapon To StopFire
 	void StopWeaponFire();
+
+	void ReloadWeapon();
 	
 };

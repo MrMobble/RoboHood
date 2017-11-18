@@ -15,17 +15,30 @@ class ROBOHOOD_API ARPlayerController : public APlayerController
 	
 public:
 
+	ARPlayerController();
+
 	//TimerHandle For The Respawn
 	FTimerHandle Timehandle_Respawn;
 
+	//Pawn To Respawn
+	TSubclassOf<APawn> ReSpawnCharacter;
+	int32 ReSpawnID;
+
 	//Player Respawn Functions
 	void OnKilled();
-	void OnRespawn();
 
-	//Server Function For Displaying A HUD Message
+	//Respawns The Player
+	void RespawnPlayer();
+
+	//Client Called When Joinging Game
 	UFUNCTION(Reliable, Client)
-	void ClientHUDMessage();
-	void ClientHUDMessage_Implementation();
-	
-	
+	void ClientPostLogin();
+	void ClientPostLogin_Implementation();
+
+	//Server Init NewPlayer At Start Of Game
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerInitSpawn(TSubclassOf<APawn> ChosenCharacter);
+	void ServerInitSpawn_Implementation(TSubclassOf<APawn> ChosenCharacter);
+	bool ServerInitSpawn_Validate(TSubclassOf<APawn> ChosenCharacter) { return true; }
+
 };

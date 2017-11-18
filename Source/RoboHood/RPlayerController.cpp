@@ -3,46 +3,62 @@
 #include "RoboHood.h"
 #include "RPlayerController.h"
 
-//GameFrameWork
+//Engine Includes
 #include "GameFramework/GameMode.h"
 #include "GameFramework/Actor.h"
+#include "Net/UnrealNetwork.h"
 
-//Other Classes
+//Class Includes
 #include "RGameMode.h"
 #include "RHUD.h"
+#include "RCharacter.h"
+#include "RGameState.h"
+#include "RGameInstance.h"
+#include "RPlayerState.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // General Functions And Variables
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//Called When Player Is Killed
+ARPlayerController::ARPlayerController()
+{
+	//Seems To Be Empty
+}
+
 void ARPlayerController::OnKilled()
 {
 	UnPossess();
-
-	ClientHUDMessage();
-
-	GetWorldTimerManager().SetTimer(Timehandle_Respawn, this, &ARPlayerController::OnRespawn, 5.f);
+	GetWorldTimerManager().SetTimer(Timehandle_Respawn, this, &ARPlayerController::RespawnPlayer, 5.f);
 }
 
-//Respawns The Player
-void ARPlayerController::OnRespawn()
+void ARPlayerController::ClientPostLogin_Implementation()
 {
-	ARGameMode* const MyGameMode = GetWorld()->GetAuthGameMode<ARGameMode>();
-	if (MyGameMode)
+	URGameInstance* GInstance = Cast<URGameInstance>(GetWorld()->GetGameInstance());
+	if (GInstance)
 	{
-		APawn* NewPawn = MyGameMode->SpawnDefaultPawnFor(this, MyGameMode->ChooseSpawnLocation(this));
-		Possess(NewPawn);
+		//Gets The GameInstance And Uses That To Set The Character
+		ServerInitSpawn(GInstance->GameCharacters[GInstance->CharacterIndex]);
 	}
 }
 
-//Displays HUD Message
-void ARPlayerController::ClientHUDMessage_Implementation()
+void ARPlayerController::ServerInitSpawn_Implementation(TSubclassOf<APawn> ChosenCharacter)
 {
-	ARHUD* HUD = Cast<ARHUD>(GetHUD());
-	if (HUD)
+	ReSpawnCharacter = ChosenCharacter;
+
+	ARGameMode* GMode = Cast<ARGameMode>(GetWorld()->GetAuthGameMode());
+	if (GMode)
 	{
-		HUD->RespawnTextAdd();
+		APawn* NewCharacter = GMode->SpawnPlayer(ReSpawnCharacter);
+		Possess(NewCharacter);
 	}
+}
+
+void ARPlayerController::RespawnPlayer()
+{
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	APawn* NewCharacter = GetWorld()->SpawnActor<ARCharacter>(ReSpawnCharacter, FVector(0, 0, 5000), FRotator(0, 0, 0), ActorSpawnParams);
+	Possess(NewCharacter);
 }
 

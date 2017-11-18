@@ -1,0 +1,123 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#include "RoboHood.h"
+#include "RLobbyPlayerState.h"
+
+//Engine Includes
+#include "Net/UnrealNetwork.h" 
+
+//Class Includes
+#include "RGameInstance.h"
+#include "RLobbyGameState.h"
+
+ARLobbyPlayerState::ARLobbyPlayerState()
+{
+	isReady = false;
+	DisplayName = FString("Hugh Mungus");
+}
+
+void ARLobbyPlayerState::BeginPlay()
+{
+	Super::BeginPlay();
+
+	UpdateLobbyPlayerList();
+}
+
+void ARLobbyPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ARLobbyPlayerState, isReady);
+	DOREPLIFETIME(ARLobbyPlayerState, DisplayName);
+}
+
+void ARLobbyPlayerState::UpdateLobbyPlayerList()
+{
+	ARLobbyGameState* LGState = Cast<ARLobbyGameState>(GetWorld()->GetGameState());
+	if (LGState)
+	{
+		//Updates The PlayerList When Someone Joins The Lobby
+		LGState->MultiUpdatePlayerList();
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// GameInstance Save Class/Name Functions / Variables
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ARLobbyPlayerState::ServerSetSelectedClass_Implementation(int32 Index)
+{
+	ClientSetSelectedClass(Index);
+}
+
+void ARLobbyPlayerState::ClientSetSelectedClass_Implementation(int32 Index)
+{
+	URGameInstance* GInstance = Cast<URGameInstance>(GetWorld()->GetGameInstance());
+	if (GInstance) 
+	{ 
+		GInstance->CharacterIndex = Index;
+	}
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void ARLobbyPlayerState::ServerSaveDisplayName_Implementation(const FString& Name)
+{
+	ClientSaveDisplayName(Name);
+}
+
+void ARLobbyPlayerState::ClientSaveDisplayName_Implementation(const FString& Name)
+{
+	URGameInstance* GInstance = Cast<URGameInstance>(GetWorld()->GetGameInstance());
+	if (GInstance)
+	{ 
+		GInstance->CharacterDisplayName = Name;
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Lobby Is Ready/Name Functions And Varibles
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+
+void ARLobbyPlayerState::SetisReady() 
+{ 
+	if (Role < ROLE_Authority) { ServerSetisReady(); }
+
+	isReady = !isReady; 
+}
+
+void ARLobbyPlayerState::ServerSetisReady_Implementation()
+{
+	SetisReady();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void ARLobbyPlayerState::SetDisplayName(FString NewName)
+{
+	if (Role < ROLE_Authority)
+	{
+		ServerSetDisplayName(NewName);
+	}
+
+	DisplayName = NewName;
+
+	UpdateLobbyPlayerList();
+}
+
+void ARLobbyPlayerState::ServerSetDisplayName_Implementation(const FString& NewName)
+{
+	SetDisplayName(NewName);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void ARLobbyPlayerState::ServerCountDown_Implementation()
+{
+	ARLobbyGameState* LGState = Cast<ARLobbyGameState>(GetWorld()->GetGameState());
+	if (LGState)
+	{
+		//Starts The CountDown On The Server
+		LGState->StartCountDown();
+	}
+}

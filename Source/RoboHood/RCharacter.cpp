@@ -6,6 +6,7 @@
 //All Includes For Other Scripts
 #include "RWeapon.h"
 #include "RPlayerController.h"
+#include "RPlayerState.h"
 
 //Other Includes
 #include "Net/UnrealNetwork.h"
@@ -126,6 +127,8 @@ float ARCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEve
 			if (PlayerController)
 			{
 				PlayerController->OnKilled();
+
+				DamageCauser->GetInstigator()->PlayerState->Score += 1;
 			}
 
 			CurrentWeapon->RemoveWeapon();

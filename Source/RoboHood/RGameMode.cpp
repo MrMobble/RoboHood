@@ -8,38 +8,74 @@
 #include "RPlayerController.h"
 #include "RSpawnPoint.h"
 #include "RHUD.h"
+#include "RPlayerState.h"
+#include "RGameState.h"
 
 //Other Includes
 #include "Public/EngineUtils.h"
+#include "GameFramework/Actor.h"
 
 ARGameMode::ARGameMode()
 {
-	// set default pawn class to our Blueprinted character
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Player/BP_Character"));
-	if (PlayerPawnBPClass.Class != NULL) { DefaultPawnClass = PlayerPawnBPClass.Class; }
-	
 
-	// Set default pawn class to our Blueprinted character because I am lazy
-	static ConstructorHelpers::FClassFinder<AHUD> TestHUD(TEXT("/Game/UI/BP_HUD"));
-	if (TestHUD.Class != NULL) { HUDClass = TestHUD.Class; }
-
+	//Player Controller
 	PlayerControllerClass = ARPlayerController::StaticClass();
 
+	//Player State
+	PlayerStateClass = ARPlayerState::StaticClass();
+
+	//Game State
+	GameStateClass = ARGameState::StaticClass();
+
+	//HUD
+	HUDClass = ARHUD::StaticClass();
+
 }
 
-AActor* ARGameMode::ChooseSpawnLocation(AController* Player)
+////Find Random SpawnPoint FUnction
+//AActor* ARGameMode::ChooseSpawnLocation(AController* PlayerController)
+//{
+//
+//		TArray<ARSpawnPoint*> SpawnPoints;
+//		for (TActorIterator<ARSpawnPoint> Itr(GetWorld()); Itr; ++Itr)
+//		{
+//			SpawnPoints.Add(*Itr);
+//		}
+//
+//		TArray<ARCharacter*> Players;
+//		for (TActorIterator<ARCharacter> Itr(GetWorld()); Itr; ++Itr)
+//		{
+//			if ((*Itr) != PlayerController->GetOwner())
+//			{
+//				Players.Add(*Itr);
+//			}
+//		}
+//
+//		return SpawnPoints[0];
+//}
+
+APawn* ARGameMode::SpawnPlayer(TSubclassOf<APawn> ChosenCharacter)
 {
-	if (Player)
-	{
-		TArray<ARSpawnPoint*> SpawnPoints;
-		for (TActorIterator<ARSpawnPoint> StartItr(GetWorld()); StartItr; ++StartItr)
-		{
-			SpawnPoints.Add(*StartItr);
-		}
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-		return SpawnPoints[FMath::RandRange(0, 4)];
-	}
-	return nullptr;
+	APawn* NewCharacter = GetWorld()->SpawnActor<APawn>(ChosenCharacter, FVector(0, 0, 2000), FRotator(0, 0, 0), ActorSpawnParams);
+	
+	return NewCharacter;
 }
 
+void ARGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	ARPlayerController* PController = Cast<ARPlayerController>(NewPlayer);
+	if (PController)
+	{
+		PController->ClientPostLogin();
+	}
+
+	ARPlayerState* PState = Cast<ARPlayerState>(PController->PlayerState);
+	if (PState)
+	{
+		PState->ClientPostLogin();
+	}
+}
 

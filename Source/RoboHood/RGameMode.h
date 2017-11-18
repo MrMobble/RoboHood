@@ -1,14 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-#include "GameFramework/GameModeBase.h"
+
+#include "GameFramework/GameMode.h"
 #include "RGameMode.generated.h"
 
 UCLASS()
-class ROBOHOOD_API ARGameMode : public AGameModeBase
+class ROBOHOOD_API ARGameMode : public AGameMode
 {
 	GENERATED_BODY()
-
+	
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // General Functions And Variables
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -18,10 +19,10 @@ public:
 	//Default Constructor
 	ARGameMode();
 
-	//Choose A SpawnLocation
-	AActor* ChooseSpawnLocation(AController* Player);
-	
-	
-	
+	//Spawn A Player And Return Pointer To It
+	APawn* SpawnPlayer(TSubclassOf<APawn> ChosenCharacter);
+
+	//PostLegin FUnction
+	virtual void PostLogin(APlayerController* NewPlayer);
 	
 };

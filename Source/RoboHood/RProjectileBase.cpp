@@ -29,8 +29,7 @@ ARProjectileBase::ARProjectileBase()
 
 	RootComponent = CollisionSphereComponent;
 
-	CollisionSphereComponent->OnComponentBeginOverlap.AddDynamic(this, &ARProjectileBase::OnOverlapBegin);
-	CollisionSphereComponent->IgnoreActorWhenMoving(GetInstigator(), true);
+	CollisionSphereComponent->OnComponentHit.AddDynamic(this, &ARProjectileBase::OnHit);
 }
 
 // Called when the game starts or when spawned

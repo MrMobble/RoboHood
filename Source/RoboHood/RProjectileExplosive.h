@@ -2,13 +2,13 @@
 
 #pragma once
 #include "RProjectileBase.h"
-#include "RProjectileDefault.generated.h"
+#include "RProjectileExplosive.generated.h"
 
 UCLASS()
-class ROBOHOOD_API ARProjectileDefault : public ARProjectileBase
+class ROBOHOOD_API ARProjectileExplosive : public ARProjectileBase
 {
 	GENERATED_BODY()
-
+	
 protected:
 
 	void BeginPlay() override;
@@ -16,7 +16,7 @@ protected:
 
 public:
 
+	ARProjectileExplosive();
 	void Tick(float DeltaTime) override;
-	void ProjectileDeathEffect_Implementation();
-	
+	void ProjectileDeathEffect_Implementation();	
 };

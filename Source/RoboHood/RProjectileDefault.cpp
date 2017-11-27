@@ -17,25 +17,11 @@ void ARProjectileDefault::OnHit(UPrimitiveComponent* HitComponent, AActor* Other
 		Destroy();
 
 		FPointDamageEvent DmgEvent;
-		OtherActor->TakeDamage(20, DmgEvent, nullptr, this);
+		OtherActor->TakeDamage(5, DmgEvent, nullptr, this);
 	}
 }
 
 void ARProjectileDefault::ProjectileDeathEffect_Implementation()
 {
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjectileDeathParticle, GetActorTransform(), true);
-}
-
-// Called when the game starts or when spawned
-void ARProjectileDefault::BeginPlay()
-{
-	Super::BeginPlay();
-	CollisionSphereComponent->IgnoreActorWhenMoving(GetInstigator(), true);
-}
-
-// Called every frame
-void ARProjectileDefault::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }

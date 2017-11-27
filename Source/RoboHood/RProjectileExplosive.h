@@ -11,12 +11,10 @@ class ROBOHOOD_API ARProjectileExplosive : public ARProjectileBase
 	
 protected:
 
-	void BeginPlay() override;
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
 
 public:
 
 	ARProjectileExplosive();
-	void Tick(float DeltaTime) override;
 	void ProjectileDeathEffect_Implementation();	
 };

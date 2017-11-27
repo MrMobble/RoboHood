@@ -15,6 +15,15 @@ class ROBOHOOD_API ARHUD : public AHUD
 
 public:
 
+	ARHUD(const FObjectInitializer& ObjectInitializer);
+
+	FCanvasIcon CenterDotIcon;
+
+	/** Main HUD update loop. */
+	virtual void DrawHUD() override;
+
+	void DrawCenterDot();
+
 	//This Is An Event You Can Call From C++ In Blueprint
 	UFUNCTION(BlueprintImplementableEvent, Category = "HUDEvents")
 	void RespawnTextAdd();

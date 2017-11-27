@@ -18,6 +18,8 @@ public:
 	//Class Constructor.
 	ARCharacter();
 
+	void SpawnWeapons();
+
 	//Multiplayer Framework For Replicating Variables
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 
@@ -28,6 +30,10 @@ public:
 	//The Players Default Weapon.
 	UPROPERTY(EditDefaultsOnly, Category = "WeaponInfo")
 	TSubclassOf<class ARWeapon> DefaultWeapon;
+
+	//The Players Default Weapon.
+	UPROPERTY(EditDefaultsOnly, Category = "WeaponInfo")
+	TArray<TSubclassOf<class ARWeapon>> Weapons;
 
 	//Called To Bind Functionality To Input.
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -53,11 +59,13 @@ public:
 	float BaseLookUpRate;
 
 	//Player Health Replicated
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, BlueprintReadOnly)
 	float Health;
 
 	UFUNCTION(BlueprintCallable)
 	float GetHealth() { return Health; }
+
+	//virtual void PawnClientRestart() override;
 
 private:
 
@@ -86,7 +94,7 @@ public:
 	//Returns The Weapon Attack Point
 	FName GetWeaponAttachPoint();
 
-	void SpawnDefaultWeapon();
+	void AddWeapon(ARWeapon* NewWeapon);
 
 	void EquipWeapon(ARWeapon* TheWeapon);
 
@@ -95,17 +103,33 @@ public:
 	void ServerEquipWeapon_Implementation(ARWeapon* TheWeapon);
 	bool ServerEquipWeapon_Validate(ARWeapon* TheWeapon);
 
+	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
+	TArray<ARWeapon*> Inventory;
+
 	UPROPERTY(Transient, ReplicatedUsing = OnRep_CurrentWeapon)
 	class ARWeapon* CurrentWeapon;
 
+	class ARWeapon* PreviousWeapon;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 CurrentWeaponIndex;
+
 	//This Is Added In The Case That We Decide That You Can Pick Up A Special Weapon (Prob Not)
 	UFUNCTION()
-	void OnRep_CurrentWeapon();
+	void OnRep_CurrentWeapon(ARWeapon* LastWeapon);
 
-	void SetCurrentWeapon(class ARWeapon* NewWeapon);
+	void SetCurrentWeapon(class ARWeapon* NewWeapon, class ARWeapon* LastWeapon = nullptr);
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	ARWeapon* GetCurrentWeapon();
+
+	void OneAction();
+	void TwoAction();
+	void ThreeAction();
+
+	void SwapToNewWeaponMesh();
+
+	void DestroyInventory();
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Shoot/Reload Functions And Variables
@@ -128,6 +152,10 @@ public:
 	//Tells The Weapon To StopFire
 	void StopWeaponFire();
 
+	//Reloads The Weapon
 	void ReloadWeapon();
+
+	UFUNCTION(BlueprintCallable)
+	void AddAmmo(int32 AmmoIndex);
 	
 };

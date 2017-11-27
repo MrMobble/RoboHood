@@ -2,42 +2,33 @@
 
 #include "RoboHood.h"
 #include "RProjectileRocket.h"
+
+//Other Includes
 #include "Public/EngineUtils.h"
+
+//Class Includes
 #include "RCharacter.h"
-
-ARProjectileRocket::ARProjectileRocket()
-{
-
-}
 
 void ARProjectileRocket::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
 {
-	for (TActorIterator<ARCharacter> aItr(GetWorld()); aItr; ++aItr)
-	{
-		float distance = GetDistanceTo(*aItr);
 
-		if (distance <= 200.0f)
+	if (OtherActor != GetInstigator())
+	{
+		for (TActorIterator<ARCharacter> aItr(GetWorld()); aItr; ++aItr)
 		{
-			UGameplayStatics::ApplyDamage(*aItr, 100.0f - distance / 2, GetInstigatorController(), this, UDamageType::StaticClass());
+			float distance = GetDistanceTo(*aItr);
+
+			if (distance <= 200.0f)
+			{
+				UGameplayStatics::ApplyDamage(*aItr, 100.0f - distance / 2, GetInstigatorController(), this, UDamageType::StaticClass());
+			}
 		}
+
+		Destroy();
 	}
 }
 
 void ARProjectileRocket::ProjectileDeathEffect_Implementation()
 {
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjectileDeathParticle, GetActorTransform(), true);
-}
-
-// Called when the game starts or when spawned
-void ARProjectileRocket::BeginPlay()
-{
-	Super::BeginPlay();
-	CollisionSphereComponent->IgnoreActorWhenMoving(GetInstigator(), true);
-}
-
-// Called every frame
-void ARProjectileRocket::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }

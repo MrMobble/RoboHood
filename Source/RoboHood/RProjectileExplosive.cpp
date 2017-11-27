@@ -9,7 +9,11 @@
 ARProjectileExplosive::ARProjectileExplosive()
 {
 	ProjectileMovement->bShouldBounce = true;
-	ProjectileMovement->Bounciness = 100.0f;
+	ProjectileMovement->Bounciness = 0.8f;
+
+	CollisionSphereComponent->SetSphereRadius(18.0f);
+
+	RootComponent = CollisionSphereComponent;
 
 	InitialLifeSpan = 3.0f;
 }
@@ -34,20 +38,6 @@ void ARProjectileExplosive::ProjectileDeathEffect_Implementation()
 	}
 
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjectileDeathParticle, GetActorTransform(), true);
-}
-
-// Called when the game starts or when spawned
-void ARProjectileExplosive::BeginPlay()
-{
-	Super::BeginPlay();
-	CollisionSphereComponent->IgnoreActorWhenMoving(GetInstigator(), true);
-}
-
-// Called every frame
-void ARProjectileExplosive::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }
 
 

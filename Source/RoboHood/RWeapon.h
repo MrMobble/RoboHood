@@ -17,6 +17,8 @@ class ROBOHOOD_API ARWeapon : public AActor
 {
 	GENERATED_BODY()
 
+	virtual void PostInitializeComponents() override;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Basic Weapon Functions And Variables
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25,6 +27,10 @@ public:
 
 	//Deafult Constructor.
 	ARWeapon();
+
+	//Projectile.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Info")
+	bool bDefaultWeapon;
 
 	//Projectile.
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
@@ -40,8 +46,19 @@ public:
 	//Attaches Weapon To Player And Sets Equipped To True.
 	void OnEquip();
 
+	//Attaches Weapon To Player And Sets Equipped To True.
+	void OnUnEquip();
+
 	//Destroys The Weapno When Player Dies
 	void RemoveWeapon();
+
+	void OnEnterInventory(ARCharacter* NewOwner);
+
+	//Attaches Weapon To Player Socket
+	void AttachMeshToPawn(FName SocketName);
+
+	//Attaches Weapon To Player Socket
+	void DeAttachMeshToPawn();
 
 protected:
 
@@ -76,9 +93,6 @@ private:
 
 	//Get LastShot Time To Calculate TimeBetweenShots
 	float LastFireTime;
-
-	//Attaches Weapon To Player Socket
-	void AttachMeshToPawn();
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Weapon Shoot Functions And Variables
@@ -158,26 +172,33 @@ public:
 
 	virtual void StartRecharge();
 
-	//Weapons Current Ammo Replicated
-	UPROPERTY(Transient, Replicated)
-	int32 CurrentAmmo;
+	// - AMMO ----------------------------------------------------------
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	int32 StartAmmo;
 
 	//MaxHeat
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Info")
 	int32 MaxAmmo;
+	// -----------------------------------------------------------------
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	bool bCanReload;
 
 	//ReloadTime
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Info")
 	float ReloadWeaponTime;
 
-	UFUNCTION(BlueprintCallable)
-	int32 GetCurrentAmmo() { return CurrentAmmo; }
+	//Weapons Current Ammo Replicated
+	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
+	int32 CurrentAmmo;
 
-	UFUNCTION(BlueprintCallable)
-	int32 GetMaxAmmo() { return MaxAmmo; }
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsReloading;
 
-	UFUNCTION(BlueprintCallable)
-	bool GetIsReloading() { return bIsReloading; }
+	UPROPERTY(BlueprintReadOnly)
+	FTimerHandle TimerHandle_ReloadWeapon;
+
+	void IncreaseAmmo();
 
 protected:
 
@@ -186,13 +207,5 @@ protected:
 	void StopRecharge();
 
 	void RechargeWeapon();
-
-	bool bIsReloading;
-	
-private:
-
-	FTimerHandle TimerHandle_ReloadWeapon;
-
-
 	
 };

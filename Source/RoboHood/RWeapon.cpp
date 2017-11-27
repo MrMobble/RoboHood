@@ -10,6 +10,7 @@
 
 //Other Includes
 #include "Components/SceneComponent.h"
+#include "Components/PrimitiveComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Character.h"
@@ -30,11 +31,14 @@ ARWeapon::ARWeapon()
 
 	bIsEquipped = false;
 	bIsReloading = false;
+}
 
-	MaxAmmo = 20;
-	CurrentAmmo = 20;
+void ARWeapon::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
 
-	RechargeWeapon();
+	MaxAmmo = MaxAmmo;
+	CurrentAmmo = StartAmmo;
 }
 
 void ARWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -62,15 +66,21 @@ void ARWeapon::SetOwningPawn(class ARCharacter* NewOwner)
 //Equips The Weapon
 void ARWeapon::OnEquip()
 {
-	AttachMeshToPawn();
-
+	AttachMeshToPawn("Hand");
 	bIsEquipped = true;
+	DetermineWeaponState();
+}
 
+void ARWeapon::OnUnEquip()
+{
+	DeAttachMeshToPawn();
+	bIsEquipped = false;
+	StopFire();
 	DetermineWeaponState();
 }
 
 //Attaches Weapon To Pawn
-void ARWeapon::AttachMeshToPawn()
+void ARWeapon::AttachMeshToPawn(FName SocketName)
 {
 	if (MyPawn)
 	{
@@ -79,8 +89,29 @@ void ARWeapon::AttachMeshToPawn()
 
 		if (PawnMesh)
 		{
-			Mesh->AttachToComponent(PawnMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachPoint);
+			Mesh->AttachToComponent(PawnMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
+			Mesh->SetHiddenInGame(false);
 		}
+	}
+}
+
+void ARWeapon::DeAttachMeshToPawn()
+{
+	Mesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+}
+
+void ARWeapon::OnEnterInventory(ARCharacter* NewOwner)
+{
+	SetOwningPawn(NewOwner);
+	AttachMeshToPawn("Storage");
+	//Mesh->SetHiddenInGame(true);
+}
+
+void ARWeapon::OnRep_MyPawn()
+{
+	if (MyPawn)
+	{
+		OnEnterInventory(MyPawn);
 	}
 }
 
@@ -88,15 +119,6 @@ void ARWeapon::AttachMeshToPawn()
 void ARWeapon::RemoveWeapon()
 {
 	Destroy();
-}
-
-void ARWeapon::OnRep_MyPawn()
-{
-	if (MyPawn)
-	{
-		SetOwningPawn(MyPawn);
-	}
-	else { if (Role == ROLE_Authority) { SetOwningPawn(nullptr); } }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -148,7 +170,10 @@ void ARWeapon::HandleFiring()
 			}
 			else
 			{
-				StartRecharge();
+				if (bCanReload)
+				{
+					StartRecharge();
+				}
 			}
 		}
 	}
@@ -213,14 +238,20 @@ void ARWeapon::FireWeapon()
 	{
 		FVector InpactPoint = LineTrace.ImpactPoint;
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(MuzzlePosition, InpactPoint);
-		GetWorld()->SpawnActor<ARProjectileBase>(Projectile, MuzzlePosition, LookAtRotation, ActorSpawnParams);
+		ARProjectileBase* Proj = GetWorld()->SpawnActor<ARProjectileBase>(Projectile, MuzzlePosition, LookAtRotation, ActorSpawnParams);
 
+		UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent());
+		Primitive->IgnoreActorWhenMoving(Proj, true);
+	
 	}
 	else
 	{
 		FVector LineTraceEndTwo = (UKismetMathLibrary::GetForwardVector(CameraRotation) * 3000) + CameraLocation;
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(MuzzlePosition, LineTraceEndTwo);
-		GetWorld()->SpawnActor<ARProjectileBase>(Projectile, MuzzlePosition, LookAtRotation, ActorSpawnParams);
+		ARProjectileBase* Proj = GetWorld()->SpawnActor<ARProjectileBase>(Projectile, MuzzlePosition, LookAtRotation, ActorSpawnParams);
+
+		UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent());
+		Primitive->IgnoreActorWhenMoving(Proj, true);
 
 	}
 }
@@ -324,10 +355,13 @@ void ARWeapon::UseAmmo()
 
 void ARWeapon::StartRecharge()
 {
-	bIsReloading = true;
-	DetermineWeaponState();
+	if (bCanReload)
+	{
+		bIsReloading = true;
+		DetermineWeaponState();
 
-	GetWorldTimerManager().SetTimer(TimerHandle_ReloadWeapon, this, &ARWeapon::RechargeWeapon, ReloadWeaponTime, false);
+		GetWorldTimerManager().SetTimer(TimerHandle_ReloadWeapon, this, &ARWeapon::RechargeWeapon, ReloadWeaponTime, false);
+	}
 }
 
 void ARWeapon::StopRecharge()
@@ -341,4 +375,9 @@ void ARWeapon::RechargeWeapon()
 	CurrentAmmo = MaxAmmo;
 
 	StopRecharge();
+}
+
+void ARWeapon::IncreaseAmmo()
+{
+	CurrentAmmo += 15;
 }

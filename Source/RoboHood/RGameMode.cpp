@@ -18,6 +18,8 @@
 ARGameMode::ARGameMode()
 {
 
+	//static ConstructorHelpers::FClassFinder<ARHUD> RHudBP(TEXT("/Game/UI/BP_HUD"));
+
 	//Player Controller
 	PlayerControllerClass = ARPlayerController::StaticClass();
 

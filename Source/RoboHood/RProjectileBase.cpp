@@ -2,13 +2,15 @@
 
 #include "RoboHood.h"
 #include "RProjectileBase.h"
+
+//Other Includes
 #include "GameFramework/ProjectileMovementComponent.h"
 
 // Sets default values
 ARProjectileBase::ARProjectileBase()
 {
 	// Set this actor to call Tick() severy frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	// Setting up the Projectile Movement Component
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
@@ -18,30 +20,24 @@ ARProjectileBase::ARProjectileBase()
 	ProjectileMovement->MaxSpeed = 500.f;
 	ProjectileMovement->bShouldBounce = false;
 	ProjectileMovement->Bounciness = 0.f;
-	//ProjectileMovement->SetIsReplicated(true);
+	bReplicates = true;
 
-	// Bool for sticky projectiles
-	Sticky = false;
-
-	// Setting up the Collision Sphere Component
+	//Setting up the Collision Sphere Component
 	CollisionSphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
-	CollisionSphereComponent->SetSphereRadius(6.f);
+	CollisionSphereComponent->SetSphereRadius(6.0f);
 
+	//Set Root Component
 	RootComponent = CollisionSphereComponent;
 
+	//Add Dynamic Event To The CollisionSphere Component
 	CollisionSphereComponent->OnComponentHit.AddDynamic(this, &ARProjectileBase::OnHit);
 }
 
-// Called when the game starts or when spawned
-void ARProjectileBase::BeginPlay()
+void ARProjectileBase::PostInitializeComponents()
 {
-	Super::BeginPlay();
-}
+	Super::PostInitializeComponents();
 
-// Called every frame
-void ARProjectileBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
+	//CollisionSphereComponent->IgnoreActorWhenMoving(GetInstigator()->GetOwner(), true);
 }
 
 void ARProjectileBase::Destroyed()

@@ -21,6 +21,8 @@ ARCharacter::ARCharacter()
 	//Set Player Health
 	Health = 100.f;
 
+	CurrentWeaponIndex = 0;
+
 	//Set Size For Collision Capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -82,6 +84,11 @@ void ARCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	//Reload Input
 	PlayerInputComponent->BindAction("Reload", IE_Released, this, &ARCharacter::ReloadWeapon);
+
+	//ChangeWeapon Input
+	PlayerInputComponent->BindAction("WeaponOne", IE_Released, this, &ARCharacter::OneAction);
+	PlayerInputComponent->BindAction("WeaponTwo", IE_Released, this, &ARCharacter::TwoAction);
+	PlayerInputComponent->BindAction("WeaponThree", IE_Released, this, &ARCharacter::ThreeAction);
 }
 
 //This Function Is Part of the Multiplayer Framework And Replicated Variables Between Server And Clients
@@ -92,6 +99,8 @@ void ARCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ARCharacter, Health);
 
 	DOREPLIFETIME(ARCharacter, CurrentWeapon);
+
+	DOREPLIFETIME(ARCharacter, Inventory);
 }
 
 //Initialise The Weapon
@@ -99,11 +108,20 @@ void ARCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	if (Role == ROLE_Authority) 
-	{ 
-		if (DefaultWeapon)
+	SpawnWeapons();
+}
+
+void ARCharacter::SpawnWeapons()
+{
+	if (Role == ROLE_Authority)
+	{
+		for (int32 i = 0; i < Weapons.Num(); i++)
 		{
-			SpawnDefaultWeapon();
+			FActorSpawnParameters SpawnInfo;
+			SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			ARWeapon* NewWeapon = GetWorld()->SpawnActor<ARWeapon>(Weapons[i], SpawnInfo);
+
+			AddWeapon(NewWeapon);
 		}
 	}
 }
@@ -128,16 +146,27 @@ float ARCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEve
 			{
 				PlayerController->OnKilled();
 
-				DamageCauser->GetInstigator()->PlayerState->Score += 1;
+				if (DamageCauser->GetInstigator() != this)
+				{
+					DamageCauser->GetInstigator()->PlayerState->Score += 1;
+				}
 			}
 
-			CurrentWeapon->RemoveWeapon();
+			DestroyInventory();
 			Destroy();
 
 		}
 	}
 	return ActualDamage;
 }
+
+//void ARCharacter::PawnClientRestart()
+//{
+//	Super::PawnClientRestart();
+//
+//	/* Equip the weapon on the client side. */
+//	SetCurrentWeapon(CurrentWeapon);
+//}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Character Movement Functions
@@ -185,18 +214,19 @@ void ARCharacter::MoveRight(float Value)
 // All Weapon Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ARCharacter::SpawnDefaultWeapon()
+void ARCharacter::AddWeapon(ARWeapon* NewWeapon)
 {
-	if (Role < ROLE_Authority) { return; }
+	if (NewWeapon && Role == ROLE_Authority)
+	{
+		NewWeapon->OnEnterInventory(this);
+		Inventory.Add(NewWeapon);
 
-	FActorSpawnParameters SpawnInfo;
-	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	ARWeapon* NewWeapon = GetWorld()->SpawnActor<ARWeapon>(DefaultWeapon, SpawnInfo);
-
-	UE_LOG(LogTemp, Warning, TEXT("SpawnWeapon Completed"));
-
-	EquipWeapon(NewWeapon);
+		// Equip first weapon in inventory
+		if (Inventory.Num() > 2 && CurrentWeapon == nullptr)
+		{
+			EquipWeapon(Inventory[0]);
+		}
+	}
 }
 
 void ARCharacter::EquipWeapon(ARWeapon* TheWeapon)
@@ -204,7 +234,12 @@ void ARCharacter::EquipWeapon(ARWeapon* TheWeapon)
 	//If The Weapon Is Valid
 	if (TheWeapon)
 	{
-		if (Role == ROLE_Authority) { SetCurrentWeapon(TheWeapon); }
+		if (TheWeapon == CurrentWeapon) 
+		{
+			return;
+		}
+
+		if (Role == ROLE_Authority) { SetCurrentWeapon(TheWeapon, CurrentWeapon); }
 		else { ServerEquipWeapon(TheWeapon); }
 	}
 }
@@ -214,13 +249,20 @@ void ARCharacter::ServerEquipWeapon_Implementation(ARWeapon* TheWeapon) { EquipW
 bool ARCharacter::ServerEquipWeapon_Validate(ARWeapon* TheWeapon) { return true; }
 
 //OnRep Function
-void ARCharacter::OnRep_CurrentWeapon() 
+void ARCharacter::OnRep_CurrentWeapon(ARWeapon* LastWeapon)
 { 
-	SetCurrentWeapon(CurrentWeapon); 
+	SetCurrentWeapon(CurrentWeapon, LastWeapon);
 }
 
-void ARCharacter::SetCurrentWeapon(class ARWeapon* NewWeapon)
+void ARCharacter::SetCurrentWeapon(class ARWeapon* NewWeapon, class ARWeapon* LastWeapon)
 {
+	PreviousWeapon = LastWeapon;
+
+	ARWeapon* LocalLastWeapon = nullptr;
+	if (LastWeapon) { LocalLastWeapon = LastWeapon; }
+
+	if (LocalLastWeapon) { LocalLastWeapon->OnUnEquip(); }
+
 	CurrentWeapon = NewWeapon;
 
 	if (NewWeapon)
@@ -228,11 +270,56 @@ void ARCharacter::SetCurrentWeapon(class ARWeapon* NewWeapon)
 		NewWeapon->SetOwningPawn(this);
 		NewWeapon->OnEquip();
 	}
+
+	SwapToNewWeaponMesh();
 }
 
 FName ARCharacter::GetWeaponAttachPoint() { return WeaponAttachPoint; }
 
 ARWeapon* ARCharacter::GetCurrentWeapon() { return CurrentWeapon; }
+
+void ARCharacter::OneAction()
+{
+	CurrentWeaponIndex = 0;
+	EquipWeapon(Inventory[0]);
+}
+
+void ARCharacter::TwoAction()
+{
+	CurrentWeaponIndex = 1;
+	EquipWeapon(Inventory[1]);
+}
+
+void ARCharacter::ThreeAction()
+{
+	CurrentWeaponIndex = 2;
+	EquipWeapon(Inventory[2]);
+}
+
+void ARCharacter::SwapToNewWeaponMesh()
+{
+	if (PreviousWeapon)
+	{
+		PreviousWeapon->AttachMeshToPawn("Storage");
+	}
+
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->AttachMeshToPawn("Hand");
+	}
+}
+
+void ARCharacter::DestroyInventory()
+{
+	for (int32 I = 0; I < Inventory.Num(); I++)
+	{
+		ARWeapon* Weapon = Inventory[I];
+		if (Weapon)
+		{
+			Weapon->Destroy();
+		}
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ShootWeapon Functions
@@ -265,5 +352,13 @@ void ARCharacter::ReloadWeapon()
 	if (CurrentWeapon)
 	{
 		CurrentWeapon->StartRecharge();
+	}
+}
+
+void ARCharacter::AddAmmo(int32 AmmoIndex)
+{
+	if (CurrentWeapon)
+	{
+		Inventory[AmmoIndex]->IncreaseAmmo();
 	}
 }

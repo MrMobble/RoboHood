@@ -51,6 +51,8 @@ void ARPlayerController::ServerInitSpawn_Implementation(TSubclassOf<APawn> Chose
 		APawn* NewCharacter = GMode->SpawnPlayer(ReSpawnCharacter);
 		Possess(NewCharacter);
 	}
+
+	//GetHUD()->DrawHUD();
 }
 
 void ARPlayerController::RespawnPlayer()

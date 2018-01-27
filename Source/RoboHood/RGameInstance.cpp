@@ -31,7 +31,6 @@ UUserWidget* URGameInstance::CreateMenuWidget(APlayerController* PlayerControlle
 			TheMenuWidget->AddToViewport();
 		}
 	}
-
 	return TheMenuWidget;
 }
 
@@ -45,7 +44,6 @@ UUserWidget* URGameInstance::CreateLobbyWidget(APlayerController* PlayerControll
 			TheLobbyWidget->AddToViewport();
 		}
 	}
-
 	return TheLobbyWidget;
 }
 
@@ -59,6 +57,15 @@ UUserWidget* URGameInstance::CreateGameWidget(APlayerController* PlayerControlle
 			TheGameWidget->AddToViewport();
 		}
 	}
-
 	return TheGameWidget;
+}
+
+TArray<FString> URGameInstance::GetCurrentSettings(FString Section)
+{
+	return URSettingsManager::GetSettings(Section);
+}
+
+float URGameInstance::GetAudioSetting(FName ConVar, FString Section)
+{
+	return URSettingsManager::GetAudio(ConVar, Section);
 }

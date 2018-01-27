@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Engine/GameInstance.h"
+#include "UI/RSettingsManager.h"
 #include "RGameInstance.generated.h"
 
 UCLASS()
@@ -64,5 +65,15 @@ public:
 	//Getters
 	UFUNCTION(BlueprintCallable)
 	UUserWidget* GetLobbyWidget() { return TheLobbyWidget; }
+
+public:
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FString> GetCurrentSettings(FString Section);
+
+	UFUNCTION(BlueprintCallable)
+	float GetAudioSetting(FName ConVar, FString Section);
+
+
 
 };

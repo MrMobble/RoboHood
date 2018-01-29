@@ -9,4 +9,11 @@ UCLASS()
 class ROBOHOOD_API ARLobbyPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+
+public:
+
+	AActor* SelectionReference =  nullptr;
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnSelectedClass(int32 Index);
 };

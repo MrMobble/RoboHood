@@ -21,6 +21,16 @@ ARLobbyGameMode::ARLobbyGameMode()
 	//Game State
 	GameStateClass = ARLobbyGameState::StaticClass();
 
+	DefaultPawnClass = nullptr;
+
 }
 
+AActor* ARLobbyGameMode::SpawnPlayer(TSubclassOf<AActor> ChosenCharacter)
+{
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
+	AActor* NewCharacter = GetWorld()->SpawnActor<AActor>(ChosenCharacter, FVector(0, 0, 0), FRotator(0, 0, 0), ActorSpawnParams);
+
+	return NewCharacter;
+}

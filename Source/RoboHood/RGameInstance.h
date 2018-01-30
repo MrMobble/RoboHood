@@ -24,6 +24,10 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<TSubclassOf<APawn>> GameCharacters;
 
+	//This Is An Array Of Characters You Declare In The BP Version Of The Game_Instance
+	UPROPERTY(EditAnywhere)
+	TArray<TSubclassOf<AActor>> LobbyCharacters;
+
 	//The Index Of The Character You Selected
 	UPROPERTY(BlueprintReadOnly)
 	int32 CharacterIndex;

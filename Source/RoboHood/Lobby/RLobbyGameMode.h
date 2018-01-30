@@ -18,5 +18,8 @@ public:
 
 	//Default Constructor
 	ARLobbyGameMode();
+
+	//Spawn A Player And Return Pointer To It
+	AActor* SpawnPlayer(TSubclassOf<AActor> ChosenCharacter);
 	
 };

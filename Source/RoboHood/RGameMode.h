@@ -19,8 +19,11 @@ public:
 	//Default Constructor
 	ARGameMode();
 
+	//Choose Spawn Location
+	AActor* ChooseSpawnLocation(AController* PlayerController);
+
 	//Spawn A Player And Return Pointer To It
-	APawn* SpawnPlayer(TSubclassOf<APawn> ChosenCharacter);
+	APawn* SpawnPlayer(AController* PlayerController, TSubclassOf<APawn> ChosenCharacter);
 
 	//PostLegin FUnction
 	virtual void PostLogin(APlayerController* NewPlayer);

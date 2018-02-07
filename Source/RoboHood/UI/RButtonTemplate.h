@@ -41,6 +41,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Button Settings")
 	FButtonStyle Button_Style;
 
+	UPROPERTY(EditAnywhere, Category = "Button Settings")
+	FButtonStyle ActiveButton_Style;
+
 	//Functions
 
 	UFUNCTION(BlueprintCallable)
@@ -48,6 +51,13 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ChangeState(UTextBlock* TextBlock, ETextState CurrentState);
+
+	UFUNCTION(BlueprintCallable)
+	void SetSelected(UTextBlock* TextBlock, UButton* Button, bool InBool);
+
+private:
+
+	bool isActive;
 
 	
 public:

@@ -18,6 +18,8 @@ public:
 	//Class Constructor.
 	ARCharacter();
 
+	virtual void Tick(float DeltaTime) override;
+
 	void SpawnWeapons();
 
 	//Multiplayer Framework For Replicating Variables
@@ -65,7 +67,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetHealth() { return Health; }
 
-	//virtual void PawnClientRestart() override;
+	//Player Health Replicated
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	float AimPitch;
+
+	void SetPitch();
+
+	UFUNCTION(BlueprintCallable)
+	float GetAimPitch() { return AimPitch; }
 
 private:
 
@@ -111,8 +120,10 @@ public:
 
 	class ARWeapon* PreviousWeapon;
 
-	UPROPERTY(BlueprintReadOnly)
 	int32 CurrentWeaponIndex;
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetCurrentWeaponIndex() { return CurrentWeaponIndex; }
 
 	//This Is Added In The Case That We Decide That You Can Pick Up A Special Weapon (Prob Not)
 	UFUNCTION()
@@ -120,8 +131,8 @@ public:
 
 	void SetCurrentWeapon(class ARWeapon* NewWeapon, class ARWeapon* LastWeapon = nullptr);
 
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	ARWeapon* GetCurrentWeapon();
+	UFUNCTION(BlueprintCallable)
+	class ARWeapon* GetCurrentWeapon() { return CurrentWeapon; }
 
 	void OneAction();
 	void TwoAction();

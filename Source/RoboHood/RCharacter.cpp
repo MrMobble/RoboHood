@@ -11,12 +11,13 @@
 //Other Includes
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 ARCharacter::ARCharacter()
 {
  	//Set This Character To Call Tick() Every Frame.  You Can Turn This Off To Improve Performance If You Don't Need It.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	//Set Player Health
 	Health = 100.f;
@@ -101,6 +102,8 @@ void ARCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ARCharacter, CurrentWeapon);
 
 	DOREPLIFETIME(ARCharacter, Inventory);
+
+	DOREPLIFETIME(ARCharacter, AimPitch);
 }
 
 //Initialise The Weapon
@@ -276,8 +279,6 @@ void ARCharacter::SetCurrentWeapon(class ARWeapon* NewWeapon, class ARWeapon* La
 
 FName ARCharacter::GetWeaponAttachPoint() { return WeaponAttachPoint; }
 
-ARWeapon* ARCharacter::GetCurrentWeapon() { return CurrentWeapon; }
-
 void ARCharacter::OneAction()
 {
 	CurrentWeaponIndex = 0;
@@ -360,5 +361,26 @@ void ARCharacter::AddAmmo(int32 AmmoIndex)
 	if (CurrentWeapon)
 	{
 		Inventory[AmmoIndex]->IncreaseAmmo();
+	}
+}
+
+// Called every frame
+void ARCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	//UE_LOG(LogTemp, Warning, TEXT("Your message"));
+
+	SetPitch();
+}
+
+void ARCharacter::SetPitch()
+{
+	if (Role == ROLE_Authority)
+	{
+		FRotator Delta = GetControlRotation() - GetActorRotation();
+		Delta.Normalize();
+
+		AimPitch = Delta.Pitch;
 	}
 }

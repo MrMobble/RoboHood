@@ -13,13 +13,16 @@ ARLaunchPad::ARLaunchPad()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-	PadMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SpawnerMesh"));
-	PadMesh->SetCollisionObjectType(ECC_WorldDynamic);
-	PadMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	PadMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SpawnerMesh"));
+
+	CollisionCube = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionCube"));
+	CollisionCube->SetCollisionObjectType(ECC_WorldDynamic);
+	CollisionCube->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CollisionCube->SetupAttachment(PadMesh);
 
 	RootComponent = PadMesh;
 
-	PadMesh->OnComponentBeginOverlap.AddDynamic(this, &ARLaunchPad::OnOverlapBegin);
+	CollisionCube->OnComponentBeginOverlap.AddDynamic(this, &ARLaunchPad::OnOverlapBegin);
 
 }
 

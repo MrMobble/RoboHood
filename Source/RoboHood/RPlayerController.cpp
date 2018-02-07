@@ -48,19 +48,18 @@ void ARPlayerController::ServerInitSpawn_Implementation(TSubclassOf<APawn> Chose
 	ARGameMode* GMode = Cast<ARGameMode>(GetWorld()->GetAuthGameMode());
 	if (GMode)
 	{
-		APawn* NewCharacter = GMode->SpawnPlayer(ReSpawnCharacter);
+		APawn* NewCharacter = GMode->SpawnPlayer(this, ReSpawnCharacter);
 		Possess(NewCharacter);
 	}
-
-	//GetHUD()->DrawHUD();
 }
 
 void ARPlayerController::RespawnPlayer()
 {
-	FActorSpawnParameters ActorSpawnParams;
-	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	APawn* NewCharacter = GetWorld()->SpawnActor<ARCharacter>(ReSpawnCharacter, FVector(0, 0, 5000), FRotator(0, 0, 0), ActorSpawnParams);
-	Possess(NewCharacter);
+	ARGameMode* GMode = Cast<ARGameMode>(GetWorld()->GetAuthGameMode());
+	if (GMode)
+	{
+		APawn* NewCharacter = GMode->SpawnPlayer(this, ReSpawnCharacter);
+		Possess(NewCharacter);
+	}
 }
 

@@ -32,6 +32,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Info")
 	bool bDefaultWeapon;
 
+	UFUNCTION(BlueprintCallable)
+	bool GetDefaultWeapon() { return bDefaultWeapon; }
+
+	//OnHit Particle Effect
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
+	UParticleSystem* MuzzleFlash;
+
 	//Projectile.
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
 	TSubclassOf<class ARProjectileBase> Projectile;
@@ -188,9 +195,18 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Info")
 	float ReloadWeaponTime;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	FName MuzzleBone;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	FName ElbowBone;
+
 	//Weapons Current Ammo Replicated
 	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
 	int32 CurrentAmmo;
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetCurrentAmmo() { return CurrentAmmo; }
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsReloading;
@@ -199,6 +215,14 @@ public:
 	FTimerHandle TimerHandle_ReloadWeapon;
 
 	void IncreaseAmmo();
+
+	void SpawnMuzzleFlash();
+
+	UPROPERTY(ReplicatedUsing = OnRep_MFlash)
+	bool MFlash;
+
+	UFUNCTION()
+	void OnRep_MFlash();
 
 protected:
 

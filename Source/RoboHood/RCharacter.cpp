@@ -190,6 +190,8 @@ void ARCharacter::LookUpAtRate(float Rate)
 //Move Forward/Back Function
 void ARCharacter::MoveForward(float Value)
 {
+	AnimSpeed = Value;
+
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -203,6 +205,8 @@ void ARCharacter::MoveForward(float Value)
 //Move Left/Right Function
 void ARCharacter::MoveRight(float Value)
 {
+	AnimDirection = Value;
+
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
 		const FRotator Rotation = Controller->GetControlRotation();

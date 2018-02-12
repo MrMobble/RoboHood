@@ -60,6 +60,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	float BaseLookUpRate;
 
+	UPROPERTY(BlueprintReadOnly)
+	float AnimDirection;
+
+	UPROPERTY(BlueprintReadOnly)
+	float AnimSpeed;
+
 	//Player Health Replicated
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	float Health;

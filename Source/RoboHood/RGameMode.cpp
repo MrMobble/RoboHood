@@ -17,9 +17,6 @@
 
 ARGameMode::ARGameMode()
 {
-
-	//static ConstructorHelpers::FClassFinder<ARHUD> RHudBP(TEXT("/Game/UI/BP_HUD"));
-
 	//Player Controller
 	PlayerControllerClass = ARPlayerController::StaticClass();
 
@@ -31,39 +28,41 @@ ARGameMode::ARGameMode()
 
 	//HUD
 	HUDClass = ARHUD::StaticClass();
-
 }
 
-////Find Random SpawnPoint FUnction
-//AActor* ARGameMode::ChooseSpawnLocation(AController* PlayerController)
-//{
-//
-//		TArray<ARSpawnPoint*> SpawnPoints;
-//		for (TActorIterator<ARSpawnPoint> Itr(GetWorld()); Itr; ++Itr)
-//		{
-//			SpawnPoints.Add(*Itr);
-//		}
-//
-//		TArray<ARCharacter*> Players;
-//		for (TActorIterator<ARCharacter> Itr(GetWorld()); Itr; ++Itr)
-//		{
-//			if ((*Itr) != PlayerController->GetOwner())
-//			{
-//				Players.Add(*Itr);
-//			}
-//		}
-//
-//		return SpawnPoints[0];
-//}
+//Find Random SpawnPoint FUnction
+AActor* ARGameMode::ChooseSpawnLocation(AController* PlayerController)
+{
+	if (PlayerController)
+	{
+		TArray<ARSpawnPoint*> SpawnPoints;
+		for (TActorIterator<ARSpawnPoint> Itr(GetWorld()); Itr; ++Itr)
+		{
+			SpawnPoints.Add(*Itr);
+		}
 
-APawn* ARGameMode::SpawnPlayer(TSubclassOf<APawn> ChosenCharacter)
+		if (SpawnPoints.Num() != 0)
+			return SpawnPoints[FMath::RandRange(0, SpawnPoints.Num() - 1)];	
+	}
+
+	return nullptr;
+}
+
+APawn* ARGameMode::SpawnPlayer(AController* PlayerController, TSubclassOf<APawn> ChosenCharacter)
 {
 	FActorSpawnParameters ActorSpawnParams;
 	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	APawn* NewCharacter = GetWorld()->SpawnActor<APawn>(ChosenCharacter, FVector(0, 0, 2000), FRotator(0, 0, 0), ActorSpawnParams);
+	AActor* SpawnLocation = ChooseSpawnLocation(PlayerController);
+	if (SpawnLocation)
+	{
+		APawn* NewCharacter = GetWorld()->SpawnActor<APawn>(ChosenCharacter, SpawnLocation->GetActorLocation(), SpawnLocation->GetActorRotation(), ActorSpawnParams);
+		return NewCharacter;
+	}
+
+	return nullptr;
 	
-	return NewCharacter;
+	
 }
 
 void ARGameMode::PostLogin(APlayerController* NewPlayer)

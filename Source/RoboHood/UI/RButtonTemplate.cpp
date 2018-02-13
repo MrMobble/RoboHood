@@ -11,6 +11,8 @@ void URButtonTemplate::SynchronizeProperties()
 
 void URButtonTemplate::IniButton(UTextBlock* TextBlock, UButton* Button)
 {
+	isActive = false;
+
 	//Set Text
 	TextBlock->SetText(Label_Text);
 	TextBlock->SetFont(Label_Font);
@@ -29,7 +31,23 @@ void URButtonTemplate::ChangeState(UTextBlock* TextBlock, ETextState CurrentStat
 		break;
 
 		case ETextState::VE_UnHover:
-			TextBlock->SetColorAndOpacity(Label_Normal);
+			if (!isActive) { TextBlock->SetColorAndOpacity(Label_Normal); }
 		break;
+	}
+}
+
+void URButtonTemplate::SetSelected(UTextBlock* TextBlock, UButton* Button, bool InBool)
+{
+	isActive = InBool;
+
+	if (isActive)
+	{
+		Button->SetStyle(ActiveButton_Style);
+		TextBlock->SetColorAndOpacity(Label_Hover);
+	}
+	else
+	{
+		Button->SetStyle(Button_Style);
+		TextBlock->SetColorAndOpacity(Label_Normal);
 	}
 }

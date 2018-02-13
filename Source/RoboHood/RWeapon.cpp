@@ -46,6 +46,8 @@ void ARWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ARWeapon, MyPawn);
+
+	DOREPLIFETIME(ARWeapon, MFlash);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +92,10 @@ void ARWeapon::AttachMeshToPawn(FName SocketName)
 		if (PawnMesh)
 		{
 			Mesh->AttachToComponent(PawnMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
-			Mesh->SetHiddenInGame(false);
+			if (SocketName == "Storage")
+				Mesh->SetHiddenInGame(true);
+			else
+				Mesh->SetHiddenInGame(false);
 		}
 	}
 }
@@ -104,7 +109,7 @@ void ARWeapon::OnEnterInventory(ARCharacter* NewOwner)
 {
 	SetOwningPawn(NewOwner);
 	AttachMeshToPawn("Storage");
-	//Mesh->SetHiddenInGame(true);
+	Mesh->SetHiddenInGame(true);
 }
 
 void ARWeapon::OnRep_MyPawn()
@@ -231,8 +236,13 @@ void ARWeapon::FireWeapon()
 	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	ActorSpawnParams.Instigator = MyPawn;
 
+	if (MuzzleFlash) {
+		SpawnMuzzleFlash();
+		MFlash = !MFlash;
+	}
+
 	//This is the position on the muzzle
-	FVector MuzzlePosition = Mesh->GetBoneLocation("joint2", EBoneSpaces::WorldSpace);
+	FVector MuzzlePosition = Mesh->GetBoneLocation(MuzzleBone, EBoneSpaces::WorldSpace);
 
 	if (LineTrace.bBlockingHit)
 	{
@@ -380,4 +390,28 @@ void ARWeapon::RechargeWeapon()
 void ARWeapon::IncreaseAmmo()
 {
 	CurrentAmmo += 15;
+}
+
+void ARWeapon::SpawnMuzzleFlash()
+{
+	//This is the position on the muzzle
+	FRotator Rotation = FRotator(90, 90, 0);
+
+	if (MuzzleFlash)
+		UGameplayStatics::SpawnEmitterAttached(MuzzleFlash, Mesh, MuzzleBone, FVector::ZeroVector, Rotation, EAttachLocation::SnapToTarget);
+}
+
+void ARWeapon::OnRep_MFlash()
+{
+	if (Role < ROLE_Authority)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Client"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Server"));
+	}
+
+	SpawnMuzzleFlash();
+
 }

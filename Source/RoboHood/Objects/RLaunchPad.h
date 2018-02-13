@@ -19,9 +19,12 @@ public:
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UPROPERTY(VisibleDefaultsOnly, Category = "PadMesh")
-	UStaticMeshComponent* PadMesh;
+	UBoxComponent* CollisionCube;
 
-	UPROPERTY(EditDefaultsOnly, Category = "LuanchPad Properties")
+	UPROPERTY(VisibleDefaultsOnly, Category = "PadMesh")
+	USkeletalMeshComponent* PadMesh;
+
+	UPROPERTY(EditAnywhere, Category = "LuanchPad Properties")
 	FVector LaunchPower;
 	
 };

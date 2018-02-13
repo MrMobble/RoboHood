@@ -12,20 +12,17 @@
 void ARProjectileRocket::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
 {
 
-	if (OtherActor != GetInstigator())
+	for (TActorIterator<ARCharacter> aItr(GetWorld()); aItr; ++aItr)
 	{
-		for (TActorIterator<ARCharacter> aItr(GetWorld()); aItr; ++aItr)
+		float distance = GetDistanceTo(*aItr);
+		if (distance <= 400.0f)
 		{
-			float distance = GetDistanceTo(*aItr);
-
-			if (distance <= 200.0f)
-			{
-				UGameplayStatics::ApplyDamage(*aItr, 100.0f - distance / 2, GetInstigatorController(), this, UDamageType::StaticClass());
-			}
+			FPointDamageEvent DmgEvent;
+			aItr->TakeDamage(70.0f - (distance / 7), DmgEvent, nullptr, this);
 		}
-
-		Destroy();
 	}
+
+	Destroy();
 }
 
 void ARProjectileRocket::ProjectileDeathEffect_Implementation()

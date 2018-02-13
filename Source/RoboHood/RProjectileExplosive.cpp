@@ -22,7 +22,7 @@ void ARProjectileExplosive::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 {
 	if (OtherActor->IsA(ARCharacter::StaticClass()) && OtherActor != GetInstigator())
 	{
-		Destroy();
+		Destroy();		
 	}
 }
 
@@ -33,7 +33,8 @@ void ARProjectileExplosive::ProjectileDeathEffect_Implementation()
 		float distance = GetDistanceTo(*aItr);
 		if (distance <= 350.0f)
 		{
-			UGameplayStatics::ApplyDamage(*aItr, 60.0f - (distance / 6), GetInstigatorController(), this, UDamageType::StaticClass());
+			FPointDamageEvent DmgEvent;
+			aItr->TakeDamage(60.0f - (distance / 6), DmgEvent, nullptr, this);
 		}
 	}
 

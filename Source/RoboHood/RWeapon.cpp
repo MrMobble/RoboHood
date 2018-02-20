@@ -303,8 +303,8 @@ FHitResult ARWeapon::WeaponTrace(const FVector& TraceFrom, const FVector& TraceT
 	FHitResult Hit(ForceInit);
 	GetWorld()->LineTraceSingleByChannel(Hit, TraceFrom, TraceTo, ECC_WorldStatic, TraceParams);
 
-	DrawDebugLine(GetWorld(), TraceFrom, Hit.ImpactPoint, FColor(255, 0, 0), false, 5, 0, 4);
-	DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 48, 12, FColor(255, 0, 0), false, 5, 0, 4);
+	//DrawDebugLine(GetWorld(), TraceFrom, Hit.ImpactPoint, FColor(255, 0, 0), false, 5, 0, 4);
+	//DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 48, 12, FColor(255, 0, 0), false, 5, 0, 4);
 
 	return Hit;
 }

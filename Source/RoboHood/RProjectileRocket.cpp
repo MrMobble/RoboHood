@@ -18,7 +18,7 @@ void ARProjectileRocket::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherA
 		if (distance <= 400.0f)
 		{
 			FPointDamageEvent DmgEvent;
-			aItr->TakeDamage(70.0f - (distance / 7), DmgEvent, nullptr, this);
+			aItr->TakeDamage(70.0f - (distance / 7), DmgEvent, GetInstigatorController(), this);
 		}
 	}
 

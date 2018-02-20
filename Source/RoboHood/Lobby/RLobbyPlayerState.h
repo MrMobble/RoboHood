@@ -55,8 +55,11 @@ public:
 	void ClientSaveDisplayName(const FString& Name);
 	void ClientSaveDisplayName_Implementation(const FString& Name);
 
-	UPROPERTY(Replicated, BlueprintReadOnly)
+	UPROPERTY(Replicated)
 	FString DisplayName;
+
+	UPROPERTY(Replicated)
+	bool isServer;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Lobby Is Ready/Name Functions And Varibles
@@ -81,6 +84,10 @@ public:
 	//Get The Lobby DisplayName
 	UFUNCTION(BlueprintCallable)
 	FString GetDisplayName() { return DisplayName; }
+
+	//Get Lobby Is Ready
+	UFUNCTION(BlueprintCallable)
+	bool CheckAuthority();
 
 	//Set The Lobby DisplayName
 	UFUNCTION(BlueprintCallable)

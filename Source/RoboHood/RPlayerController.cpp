@@ -15,6 +15,7 @@
 #include "RGameState.h"
 #include "RGameInstance.h"
 #include "RPlayerState.h"
+#include "RCameraManager.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // General Functions And Variables
@@ -22,12 +23,15 @@
 
 ARPlayerController::ARPlayerController()
 {
+	PlayerCameraManagerClass = ARCameraManager::StaticClass();
+
+	//ARCameraManager* CM = Cast<ARCameraManager>(PlayerCameraManagerClass);
+	//CM->SetPivotOffset(FVector(50, 50, 50));
 	//Seems To Be Empty
 }
 
 void ARPlayerController::OnKilled()
 {
-	UnPossess();
 	GetWorldTimerManager().SetTimer(Timehandle_Respawn, this, &ARPlayerController::RespawnPlayer, 5.f);
 }
 
@@ -44,6 +48,8 @@ void ARPlayerController::ClientPostLogin_Implementation()
 void ARPlayerController::ServerInitSpawn_Implementation(TSubclassOf<APawn> ChosenCharacter)
 {
 	ReSpawnCharacter = ChosenCharacter;
+
+	SetViewTarget(this);
 
 	ARGameMode* GMode = Cast<ARGameMode>(GetWorld()->GetAuthGameMode());
 	if (GMode)

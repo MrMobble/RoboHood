@@ -14,6 +14,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Character.h"
+#include "RCameraManager.h"
 
 //Default Constructor
 ARWeapon::ARWeapon()
@@ -221,49 +222,72 @@ void ARWeapon::FireWeapon()
 		return;
 	}
 
-	//Variables
-	FVector CameraLocation = MyPawn->GetFollowCamera()->ComponentToWorld.GetLocation();
-	FRotator CameraRotation = MyPawn->GetFollowCamera()->ComponentToWorld.GetRotation().Rotator();
+	FVector ShootDir = GetAdjustedAim();
+	FVector Origin = GetMuzzleLocation();
 
-	FVector LineTraceStart = CameraLocation;
-	FVector LineTraceEnd = (UKismetMathLibrary::GetForwardVector(CameraRotation) * 10000) + CameraLocation;
+	const float ProjectileAdjustRange = 15000.0f;
+	const FVector StartTrace = GetCameraDamageStartLocation(ShootDir);
+	const FVector EndTrace = StartTrace + ShootDir * ProjectileAdjustRange;
+	FHitResult Impact = WeaponTrace(StartTrace, EndTrace);
 
-	//LineTrace Towards The Forward Vector Of The Camera Not The Player
-	FHitResult LineTrace = WeaponTrace(LineTraceStart, LineTraceEnd);
+	// and adjust directions to hit that actor
+	if (Impact.bBlockingHit)
+	{
+		const FVector AdjustedDir = (Impact.ImpactPoint - Origin).GetSafeNormal();
+		bool bWeaponPenetration = false;
 
-	//Set Spawn Collision Handling Override
-	FActorSpawnParameters ActorSpawnParams;
-	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	ActorSpawnParams.Instigator = MyPawn;
+		const float DirectionDot = FVector::DotProduct(AdjustedDir, ShootDir);
+		if (DirectionDot < 0.0f)
+		{
+			// shooting backwards = weapon is penetrating
+			bWeaponPenetration = true;
+		}
+		else if (DirectionDot < 0.5f)
+		{
+			// check for weapon penetration if angle difference is big enough
+			// raycast along weapon mesh to check if there's blocking hit
 
-	if (MuzzleFlash) {
-		SpawnMuzzleFlash();
-		MFlash = !MFlash;
+			FVector MuzzleStartTrace = Origin - GetMuzzleDirection() * 150.0f;
+			FVector MuzzleEndTrace = Origin;
+			FHitResult MuzzleImpact = WeaponTrace(MuzzleStartTrace, MuzzleEndTrace);
+
+			if (MuzzleImpact.bBlockingHit)
+			{
+				bWeaponPenetration = true;
+			}
+		}
+
+		if (bWeaponPenetration)
+		{
+			Origin = Impact.ImpactPoint - ShootDir * 10.0f;
+		}
+		else
+		{
+			// adjust direction to hit
+			ShootDir = AdjustedDir;
+		}
 	}
 
-	//This is the position on the muzzle
-	FVector MuzzlePosition = Mesh->GetBoneLocation(MuzzleBone, EBoneSpaces::WorldSpace);
-
-	if (LineTrace.bBlockingHit)
-	{
-		FVector InpactPoint = LineTrace.ImpactPoint;
-		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(MuzzlePosition, InpactPoint);
-		ARProjectileBase* Proj = GetWorld()->SpawnActor<ARProjectileBase>(Projectile, MuzzlePosition, LookAtRotation, ActorSpawnParams);
-
-		UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent());
-		Primitive->IgnoreActorWhenMoving(Proj, true);
+	if (MuzzleFlash) SpawnMuzzleFlash();
+	MFlash = !MFlash;
 	
-	}
-	else
-	{
-		FVector LineTraceEndTwo = (UKismetMathLibrary::GetForwardVector(CameraRotation) * 3000) + CameraLocation;
-		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(MuzzlePosition, LineTraceEndTwo);
-		ARProjectileBase* Proj = GetWorld()->SpawnActor<ARProjectileBase>(Projectile, MuzzlePosition, LookAtRotation, ActorSpawnParams);
+	SpawnProjectile(Origin, ShootDir);
 
-		UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent());
-		Primitive->IgnoreActorWhenMoving(Proj, true);
 
-	}
+	//UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent());
+	//if (Primitive && Proj) Primitive->IgnoreActorWhenMoving(Proj, true);
+
+	
+}
+
+void ARWeapon::SpawnProjectile(FVector Origin, FVector ShootDir)
+{
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnParams.Instigator = Instigator;
+
+	if (ProjectileBP)
+		ARProjectileBase* Proj = GetWorld()->SpawnActor<ARProjectileBase>(ProjectileBP, Origin, ShootDir.Rotation(), SpawnParams);
 }
 
 void ARWeapon::ServerFireWeapon_Implementation() { FireWeapon(); }
@@ -278,6 +302,9 @@ FHitResult ARWeapon::WeaponTrace(const FVector& TraceFrom, const FVector& TraceT
 
 	FHitResult Hit(ForceInit);
 	GetWorld()->LineTraceSingleByChannel(Hit, TraceFrom, TraceTo, ECC_WorldStatic, TraceParams);
+
+	DrawDebugLine(GetWorld(), TraceFrom, Hit.ImpactPoint, FColor(255, 0, 0), false, 5, 0, 4);
+	DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 48, 12, FColor(255, 0, 0), false, 5, 0, 4);
 
 	return Hit;
 }
@@ -414,4 +441,55 @@ void ARWeapon::OnRep_MFlash()
 
 	SpawnMuzzleFlash();
 
+}
+
+//Aim Function
+
+FVector ARWeapon::GetAdjustedAim()
+{
+	ARPlayerController* const PlayerController = Instigator ? Cast<ARPlayerController>(Instigator->Controller) : NULL;
+
+	FVector FinalAim = FVector::ZeroVector;
+	// If we have a player controller use it for the aim
+	if (PlayerController)
+	{
+		FVector CamLoc;
+		FRotator CamRot;
+		PlayerController->GetPlayerViewPoint(CamLoc, CamRot);
+		FinalAim = CamRot.Vector();
+	}
+	else if (Instigator)
+	{
+		FinalAim = Instigator->GetBaseAimRotation().Vector();
+	}
+
+	return FinalAim;
+}
+
+FVector ARWeapon::GetCameraDamageStartLocation(const FVector& AimDir)
+{
+	ARPlayerController* PC = MyPawn ? Cast<ARPlayerController>(MyPawn->Controller) : NULL;
+	FVector OutStartTrace = FVector::ZeroVector;
+
+	if (PC)
+	{
+		// use player's camera
+		FRotator UnusedRot;
+		PC->GetPlayerViewPoint(OutStartTrace, UnusedRot);
+
+		// Adjust trace so there is nothing blocking the ray between the camera and the pawn, and calculate distance from adjusted start
+		OutStartTrace = OutStartTrace + AimDir * ((Instigator->GetActorLocation() - OutStartTrace) | AimDir);
+	}
+
+	return OutStartTrace;
+}
+
+FVector ARWeapon::GetMuzzleLocation()
+{
+	return Mesh->GetSocketLocation(MuzzleBone);
+}
+
+FVector ARWeapon::GetMuzzleDirection()
+{
+	return Mesh->GetSocketRotation(MuzzleBone).Vector();
 }

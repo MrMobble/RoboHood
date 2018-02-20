@@ -37,7 +37,9 @@ void ARProjectileBase::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	CollisionSphereComponent->IgnoreActorWhenMoving(GetInstigator(), true);
+	CollisionSphereComponent->MoveIgnoreActors.Add(Instigator);
+
+	MyController = GetInstigatorController();
 }
 
 void ARProjectileBase::Destroyed()

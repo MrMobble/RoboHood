@@ -17,7 +17,7 @@ void ARProjectileDefault::OnHit(UPrimitiveComponent* HitComponent, AActor* Other
 		Destroy();
 
 		FPointDamageEvent DmgEvent;
-		OtherActor->TakeDamage(5, DmgEvent, nullptr, this);
+		OtherActor->TakeDamage(5, DmgEvent, GetInstigatorController(), this);
 	}
 }
 

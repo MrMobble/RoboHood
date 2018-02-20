@@ -41,4 +41,6 @@ public:
 	void ServerInitSpawn_Implementation(TSubclassOf<APawn> ChosenCharacter);
 	bool ServerInitSpawn_Validate(TSubclassOf<APawn> ChosenCharacter) { return true; }
 
+	APlayerCameraManager* GetCameraManager() { return PlayerCameraManager; }
+
 };

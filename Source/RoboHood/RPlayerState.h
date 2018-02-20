@@ -26,6 +26,8 @@ public:
 
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	FString DisplayName;
+
+	void AddScore();
 	
 	
 };

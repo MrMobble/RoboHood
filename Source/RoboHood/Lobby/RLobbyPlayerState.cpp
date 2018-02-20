@@ -9,11 +9,12 @@
 //Class Includes
 #include "RGameInstance.h"
 #include "RLobbyGameState.h"
+#include "RLobbyPlayerController.h"
 
 ARLobbyPlayerState::ARLobbyPlayerState()
 {
 	isReady = false;
-	DisplayName = FString("Hugh Mungus");
+	DisplayName = FString("Test");
 }
 
 void ARLobbyPlayerState::BeginPlay()
@@ -21,6 +22,7 @@ void ARLobbyPlayerState::BeginPlay()
 	Super::BeginPlay();
 
 	UpdateLobbyPlayerList();
+
 }
 
 void ARLobbyPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
@@ -29,6 +31,7 @@ void ARLobbyPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > 
 
 	DOREPLIFETIME(ARLobbyPlayerState, isReady);
 	DOREPLIFETIME(ARLobbyPlayerState, DisplayName);
+	DOREPLIFETIME(ARLobbyPlayerState, isServer);
 }
 
 void ARLobbyPlayerState::UpdateLobbyPlayerList()
@@ -92,6 +95,22 @@ void ARLobbyPlayerState::ServerSetisReady_Implementation()
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+
+bool ARLobbyPlayerState::CheckAuthority()
+{
+	if (Role == ROLE_Authority)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("IsServer"));
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("NotServer"));
+		return false;
+	}
+
+	//UE_LOG(LogTemp, Warning, TEXT("Result: %s"), (isServer ? TEXT("True") : TEXT("False")));
+}
 
 void ARLobbyPlayerState::SetDisplayName(FString NewName)
 {

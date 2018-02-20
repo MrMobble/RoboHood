@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
+#include "HitInfo.h"
 #include "GameFramework/Character.h"
 #include "RCharacter.generated.h"
 
@@ -47,10 +48,30 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
 	//Returns FollowCamera
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return TPPCamera; }
 
 	//Apply Damage To The Players Health
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
+
+	bool CanDie();
+
+	bool Die(AController* Killer, AActor* DamageCauser);
+
+	void OnDeath(AController* Killer, AActor* DamageCauser);
+
+	void SetRagDoll();
+
+	void ReplicateHit(AController* Killer, AActor* DamageCauser, bool bKilled);
+
+	//Replicate where this pawn was last hit and damaged
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_LastTakeHitInfo)
+	struct FTakeHitInfo LastTakeHitInfo;
+
+	UFUNCTION()
+	void OnRep_LastTakeHitInfo();
+
+	UPROPERTY(EditDefaultsOnly, Category = Animation)
+	UAnimationAsset* DeathAnim;
 
 	//Base Turn Rate
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
@@ -60,18 +81,18 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	float BaseLookUpRate;
 
-	UPROPERTY(BlueprintReadOnly)
-	float AnimDirection;
-
-	UPROPERTY(BlueprintReadOnly)
-	float AnimSpeed;
-
 	//Player Health Replicated
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	float Health;
 
+	//Identifies if pawn is in its dying state
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Health)
+	uint32 bIsDying : 1;
+
 	UFUNCTION(BlueprintCallable)
 	float GetHealth() { return Health; }
+
+	bool IsAlive();
 
 	//Player Health Replicated
 	UPROPERTY(Replicated, BlueprintReadOnly)
@@ -82,15 +103,35 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetAimPitch() { return AimPitch; }
 
+	UPROPERTY(Replicated)
+	bool bWantsToRun;
+
+	UFUNCTION(BlueprintCallable)
+	bool IsRunning();
+
+	void StartRunning();
+	void StopRunning();
+
+	void SetRunning(bool bNewValue);
+
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerSetSprint(bool bNewValue);
+	void ServerSetSprint_Implementation(bool bNewValue);
+	bool ServerSetSprint_Validate(bool bNewValue) { return true; }
+
+
+
 private:
 
 	//CameraBoom
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 
-	//Camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FollowCamera;
+	class UCameraComponent* TPPCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* FPPCamera;
 
 protected:
 

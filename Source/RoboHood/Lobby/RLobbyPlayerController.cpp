@@ -2,8 +2,14 @@
 
 #include "RoboHood.h"
 #include "RLobbyPlayerController.h"
+#include "Lobby/RLobbyPlayerState.h"
 #include "RLobbyGameMode.h"
 #include "RGameInstance.h"
+
+void ARLobbyPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+}
 
 void ARLobbyPlayerController::SpawnSelectedClass(int32 Index)
 {
@@ -21,5 +27,16 @@ void ARLobbyPlayerController::SpawnSelectedClass(int32 Index)
 		SelectionReference = NewCharacter;
 		
 	}
+}
+
+bool ARLobbyPlayerController::CheckAuthority()
+{
+	ARLobbyPlayerState* PlayState = Cast<ARLobbyPlayerState>(PlayerState);
+	if (PlayState)
+	{
+		return PlayState->isServer;
+	}
+
+	return true;
 }
 

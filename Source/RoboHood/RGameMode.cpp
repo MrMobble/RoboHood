@@ -61,8 +61,6 @@ APawn* ARGameMode::SpawnPlayer(AController* PlayerController, TSubclassOf<APawn>
 	}
 
 	return nullptr;
-	
-	
 }
 
 void ARGameMode::PostLogin(APlayerController* NewPlayer)
@@ -77,6 +75,22 @@ void ARGameMode::PostLogin(APlayerController* NewPlayer)
 	if (PState)
 	{
 		PState->ClientPostLogin();
+	}
+}
+
+void ARGameMode::Killed(AController* Killer, AController* KilledPlayer, APawn* KilledPawn)
+{
+	ARPlayerState* KillerPlayerState = Killer ? Cast<ARPlayerState>(Killer->PlayerState) : NULL;
+	ARPlayerController* VictimPlayerController = KilledPlayer ? Cast<ARPlayerController>(KilledPlayer) : NULL;
+
+	if (KillerPlayerState && Killer != KilledPlayer)
+	{
+		KillerPlayerState->AddScore();
+	}
+
+	if (VictimPlayerController)
+	{
+		VictimPlayerController->OnKilled();
 	}
 }
 

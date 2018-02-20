@@ -17,6 +17,9 @@ class ROBOHOOD_API ARWeapon : public AActor
 {
 	GENERATED_BODY()
 
+	//Default Constructor.
+	ARWeapon();
+
 	virtual void PostInitializeComponents() override;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25,27 +28,26 @@ class ROBOHOOD_API ARWeapon : public AActor
 	
 public:	
 
-	//Deafult Constructor.
-	ARWeapon();
-
-	//Projectile.
+	//Is This The Default Weapon?.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Info")
 	bool bDefaultWeapon;
 
 	UFUNCTION(BlueprintCallable)
 	bool GetDefaultWeapon() { return bDefaultWeapon; }
 
-	//OnHit Particle Effect
-	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
-	UParticleSystem* MuzzleFlash;
-
 	//Projectile.
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
-	TSubclassOf<class ARProjectileBase> Projectile;
+	TSubclassOf<class ARProjectileBase> ProjectileBP;
 
 	//FireRate.
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
 	float TimeBetweenShots;
+
+	//OnHit Particle Effect
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
+	UParticleSystem* MuzzleFlash;
+
+public:
 
 	//Called From Player Sets MyPawn
 	void SetOwningPawn(class ARCharacter* NewOwner);
@@ -134,8 +136,11 @@ private:
 	void ServerHandleFiring_Implementation();
 	bool ServerHandleFiring_Validate();
 
-	//Spawns The Projectile (Needs Work)
+	//Calculate Projectile Trajectory
 	void FireWeapon();
+
+	//Spawns The Projectile
+	void SpawnProjectile(FVector Origin, FVector ShootDir);
 
 	//FireWeapon Server Function
 	UFUNCTION(Reliable, Server, WithValidation)
@@ -198,9 +203,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
 	FName MuzzleBone;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
-	FName ElbowBone;
-
 	//Weapons Current Ammo Replicated
 	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
 	int32 CurrentAmmo;
@@ -231,5 +233,15 @@ protected:
 	void StopRecharge();
 
 	void RechargeWeapon();
+
+public:
+
+	FVector GetAdjustedAim();
+
+	FVector GetCameraDamageStartLocation(const FVector& AimDir);
+
+	FVector GetMuzzleLocation();
+
+	FVector GetMuzzleDirection();
 	
 };

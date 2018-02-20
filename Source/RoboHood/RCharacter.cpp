@@ -7,6 +7,7 @@
 #include "RWeapon.h"
 #include "RPlayerController.h"
 #include "RPlayerState.h"
+#include "RGameMode.h"
 
 //Other Includes
 #include "Net/UnrealNetwork.h"
@@ -42,16 +43,19 @@ ARCharacter::ARCharacter()
 	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = 0.2f;
 
-	//Create A Camera Boom (Pulls In Towards The Player If There Is A Collision)
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 300.0f;	
-	CameraBoom->bUsePawnControlRotation = true;
+	////Create A Camera Boom (Pulls In Towards The Player If There Is A Collision)
+	//CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	//CameraBoom->SetupAttachment(RootComponent);
+	//CameraBoom->TargetArmLength = 300.0f;	
+	//CameraBoom->bUsePawnControlRotation = true;
 
-	//Create a follow camera
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-	FollowCamera->bUsePawnControlRotation = false;
+	////Create a follow camera
+	//TPPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TPPCamera"));
+	//TPPCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	//TPPCamera->bUsePawnControlRotation = false;
+
+	//FPPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FPPCamera"));
+	//FPPCamera->SetupAttachment(GetMesh());
 
 	//Enabled Variable Replication MAYBE! (Might be outdated and not needed)
 	bReplicates = true;
@@ -90,6 +94,9 @@ void ARCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("WeaponOne", IE_Released, this, &ARCharacter::OneAction);
 	PlayerInputComponent->BindAction("WeaponTwo", IE_Released, this, &ARCharacter::TwoAction);
 	PlayerInputComponent->BindAction("WeaponThree", IE_Released, this, &ARCharacter::ThreeAction);
+
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ARCharacter::StartRunning);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ARCharacter::StopRunning);
 }
 
 //This Function Is Part of the Multiplayer Framework And Replicated Variables Between Server And Clients
@@ -104,6 +111,14 @@ void ARCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ARCharacter, Inventory);
 
 	DOREPLIFETIME(ARCharacter, AimPitch);
+
+	//DOREPLIFETIME(ARCharacter, AnimDirection);
+
+	//DOREPLIFETIME(ARCharacter, AnimSpeed);
+
+	DOREPLIFETIME_CONDITION(ARCharacter, bWantsToRun, COND_SkipOwner);
+
+	DOREPLIFETIME(ARCharacter, LastTakeHitInfo);
 }
 
 //Initialise The Weapon
@@ -141,35 +156,131 @@ float ARCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEve
 	if (ActualDamage > 0.f)
 	{
 		Health -= ActualDamage;
-		// If the damage depletes our health set our lifespan to zero - which will destroy the actor  
 		if (Health <= 0.f)
 		{
-			ARPlayerController* PlayerController = Cast<ARPlayerController>(Controller);
-			if (PlayerController)
-			{
-				PlayerController->OnKilled();
-
-				if (DamageCauser->GetInstigator() != this)
-				{
-					DamageCauser->GetInstigator()->PlayerState->Score += 1;
-				}
-			}
-
-			DestroyInventory();
-			Destroy();
-
+			Die(EventInstigator, DamageCauser);
 		}
 	}
 	return ActualDamage;
 }
 
-//void ARCharacter::PawnClientRestart()
-//{
-//	Super::PawnClientRestart();
-//
-//	/* Equip the weapon on the client side. */
-//	SetCurrentWeapon(CurrentWeapon);
-//}
+bool ARCharacter::CanDie()
+{
+	if (bIsDying || IsPendingKill() || Role != ROLE_Authority || GetWorld()->GetAuthGameMode<ARGameMode>() == NULL)
+	{
+		return false;
+	}
+	return true;
+}
+
+bool ARCharacter::Die(AController* Killer, AActor* DamageCauser)
+{
+
+	if (!CanDie()) return false;
+
+	Health = FMath::Min(0.0f, Health);
+
+	AController* const KilledPlayer = (Controller != NULL) ? Controller : Cast<AController>(GetOwner());
+
+	if (KilledPlayer) UE_LOG(LogTemp, Warning, TEXT("Killed: %s"), *KilledPlayer->GetPawn()->GetName());
+
+	//If Killer is NULL then use the last person to hit them.
+	AController* const ValidKiller = (Killer != NULL) ? Killer : LastTakeHitInfo.Killer;
+
+	if (ValidKiller) UE_LOG(LogTemp, Warning, TEXT("Killer: %s"), *ValidKiller->GetPawn()->GetName());
+
+	GetWorld()->GetAuthGameMode<ARGameMode>()->Killed(ValidKiller, KilledPlayer, this);
+
+	GetCharacterMovement()->ForceReplicationUpdate();
+	
+	OnDeath(Killer, DamageCauser);
+	return true;
+}
+
+void ARCharacter::OnDeath(AController* Killer, AActor* DamageCauser)
+{
+	if (bIsDying) return;
+
+	bReplicateMovement = false;
+	bIsDying = true;
+
+	if (Role == ROLE_Authority)
+	{
+		ReplicateHit(Killer, DamageCauser, true);
+	}
+
+	DestroyInventory();
+
+	DetachFromControllerPendingDestroy();
+
+	if (GetMesh())
+	{
+		static FName CollisionProfileName(TEXT("Ragdoll"));
+		GetMesh()->SetCollisionProfileName(CollisionProfileName);
+	}
+	SetActorEnableCollision(true);
+
+	if (DeathAnim) GetMesh()->PlayAnimation(DeathAnim, false);
+	SetLifeSpan(5.0f);
+
+	// disable collisions on capsule
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+}
+
+void ARCharacter::SetRagDoll()
+{
+	bool bInRagdoll = false;
+
+	if (IsPendingKill())
+	{
+		bInRagdoll = false;
+	}
+	else if (!GetMesh() || !GetMesh()->GetPhysicsAsset())
+	{
+		bInRagdoll = false;
+	}
+	else
+	{
+		// initialize physics/etc
+		GetMesh()->SetSimulatePhysics(true);
+		GetMesh()->WakeAllRigidBodies();
+		GetMesh()->bBlendPhysics = true;
+
+		bInRagdoll = true;
+	}
+
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->SetComponentTickEnabled(false);
+
+	if (!bInRagdoll)
+	{
+		// hide and set short lifespan
+		TurnOff();
+		SetActorHiddenInGame(true);
+		SetLifeSpan(1.0f);
+	}
+	else
+	{
+		SetLifeSpan(10.0f);
+	}
+}
+
+void ARCharacter::ReplicateHit(AController* Killer, AActor* DamageCauser, bool bKilled)
+{
+	LastTakeHitInfo.Killer = Killer;
+	LastTakeHitInfo.DamageCauser = DamageCauser;
+	LastTakeHitInfo.bKilled = bKilled;
+}
+
+void ARCharacter::OnRep_LastTakeHitInfo()
+{
+	if (LastTakeHitInfo.bKilled)
+	{
+		OnDeath(LastTakeHitInfo.Killer, LastTakeHitInfo.DamageCauser);
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Character Movement Functions
@@ -190,9 +301,7 @@ void ARCharacter::LookUpAtRate(float Rate)
 //Move Forward/Back Function
 void ARCharacter::MoveForward(float Value)
 {
-	AnimSpeed = Value;
-
-	if ((Controller != NULL) && (Value != 0.0f))
+	if ((Controller != NULL) && (Value != 0.0f) && !bWantsToRun)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -200,14 +309,21 @@ void ARCharacter::MoveForward(float Value)
 
 		AddMovementInput(Direction, Value);
 	}
+	else if ((Controller != NULL) && (Value > 0.0f))
+	{
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+
+		AddMovementInput(Direction, Value);
+	}
+	
 }
 
 //Move Left/Right Function
 void ARCharacter::MoveRight(float Value)
 {
-	AnimDirection = Value;
-
-	if ((Controller != NULL) && (Value != 0.0f))
+	if ((Controller != NULL) && (Value != 0.0f) && !bWantsToRun)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -336,6 +452,11 @@ void ARCharacter::OnStopFire() { StopWeaponFire(); }
 
 void ARCharacter::StartWeaponFire()
 {
+	if (IsRunning())
+	{
+		SetRunning(false);
+	}
+
 	if (!bWantsToFire)
 	{
 		bWantsToFire = true;
@@ -378,6 +499,11 @@ void ARCharacter::Tick(float DeltaTime)
 	SetPitch();
 }
 
+bool ARCharacter::IsAlive()
+{
+	return Health > 0;
+}
+
 void ARCharacter::SetPitch()
 {
 	if (Role == ROLE_Authority)
@@ -387,4 +513,42 @@ void ARCharacter::SetPitch()
 
 		AimPitch = Delta.Pitch;
 	}
+}
+
+bool ARCharacter::IsRunning()
+{
+	return (bWantsToRun) && !GetVelocity().IsZero() && (GetVelocity().GetSafeNormal2D() | GetActorForwardVector()) > -0.1;
+}
+
+void ARCharacter::StartRunning()
+{
+	SetRunning(true);
+}
+
+void ARCharacter::StopRunning()
+{
+	SetRunning(false);
+}
+
+void ARCharacter::SetRunning(bool bNewValue)
+{
+	bWantsToRun = bNewValue;
+
+	if (bNewValue)
+		GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	else if (!bNewValue)
+		GetCharacterMovement()->MaxWalkSpeed = 300.f;
+
+	if (bWantsToRun)
+		StopWeaponFire();
+
+	if (Role < ROLE_Authority)
+	{
+		ServerSetSprint(bNewValue);
+	}
+}
+
+void ARCharacter::ServerSetSprint_Implementation(bool bNewValue)
+{
+	SetRunning(bNewValue);
 }

@@ -34,7 +34,7 @@ void ARProjectileExplosive::ProjectileDeathEffect_Implementation()
 		if (distance <= 350.0f)
 		{
 			FPointDamageEvent DmgEvent;
-			aItr->TakeDamage(60.0f - (distance / 6), DmgEvent, nullptr, this);
+			aItr->TakeDamage(60.0f - (distance / 6), DmgEvent, GetInstigatorController(), this);
 		}
 	}
 

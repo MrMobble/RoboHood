@@ -27,5 +27,7 @@ public:
 
 	//PostLegin FUnction
 	virtual void PostLogin(APlayerController* NewPlayer);
+
+	void Killed(AController* Killer, AController* KilledPlayer, APawn* KilledPawn);
 	
 };

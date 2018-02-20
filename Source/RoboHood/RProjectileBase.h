@@ -59,4 +59,8 @@ public:
 	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit) {}
 
 	virtual void Destroyed();
+
+protected:
+
+	TWeakObjectPtr<AController> MyController;
 };

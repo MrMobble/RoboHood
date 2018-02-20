@@ -38,5 +38,8 @@ void ARPlayerState::ServerSetDisplayName_Implementation(const FString& NewName)
 	SetDisplayName(NewName);
 }
 
-
+void ARPlayerState::AddScore()
+{
+	Score++;
+}
 

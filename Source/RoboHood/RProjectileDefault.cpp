@@ -5,23 +5,17 @@
 #include "GameFramework/DamageType.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 
-void ARProjectileDefault::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+void ARProjectileDefault::HandleImpact(const FHitResult& Impact)
 {
-	if (OtherActor != this && OtherActor != GetInstigator())
+	if (Impact.Actor != GetInstigator())
 	{
-		Destroy();
+		ApplyDamage(Impact, 5.0f);
 	}
 
-	if (OtherActor != GetInstigator())
-	{
-		Destroy();
+	DrawDebugPoint(GetWorld(), GetActorLocation(), 7.5, FColor(255, 0, 0), false, 2.5f);
 
-		FPointDamageEvent DmgEvent;
-		OtherActor->TakeDamage(5, DmgEvent, GetInstigatorController(), this);
-	}
-}
-
-void ARProjectileDefault::ProjectileDeathEffect_Implementation()
-{
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjectileDeathParticle, GetActorTransform(), true);
+	FTransform const SpawnTransform(Impact.ImpactNormal.Rotation(), Impact.ImpactPoint + Impact.ImpactNormal * 10.0f);
+	SpawnImpactParticle(SpawnTransform);
+	
+	Destroy();
 }

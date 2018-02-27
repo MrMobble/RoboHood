@@ -43,4 +43,11 @@ public:
 
 	APlayerCameraManager* GetCameraManager() { return PlayerCameraManager; }
 
+	virtual void PawnPendingDestroy(APawn* P) override;
+
+	UFUNCTION(Reliable, Client)
+	void ClientSetSpectatorCamera(FVector CameraLocation, FRotator CameraRotation);
+
+	bool FindDeathCameraSpot(FVector& CameraLocation, FRotator& CameraRotation);
+
 };

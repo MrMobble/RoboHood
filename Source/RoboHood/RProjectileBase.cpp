@@ -12,37 +12,73 @@ ARProjectileBase::ARProjectileBase()
 	// Set this actor to call Tick() severy frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+	//Setting up the Collision Sphere Component
+	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
+	CollisionComponent->SetSphereRadius(6.0f);
+	RootComponent = CollisionComponent;
+
+	//Particle Component
+	ParticleComponent = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleComp"));
+	ParticleComponent->SetupAttachment(RootComponent);
+
 	// Setting up the Projectile Movement Component
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
 	ProjectileMovement->UpdatedComponent = GetRootComponent();
-	ProjectileMovement->ProjectileGravityScale = 0.f;
-	ProjectileMovement->InitialSpeed = 500.f;
-	ProjectileMovement->MaxSpeed = 500.f;
-	ProjectileMovement->bShouldBounce = false;
-	ProjectileMovement->Bounciness = 0.f;
 	bReplicates = true;
 
-	//Setting up the Collision Sphere Component
-	CollisionSphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
-	CollisionSphereComponent->SetSphereRadius(6.0f);
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.TickGroup = TG_PrePhysics;
+	SetRemoteRoleForBackwardsCompat(ROLE_SimulatedProxy);
+	bReplicates = true;
+	bReplicateMovement = true;
 
-	//Set Root Component
-	RootComponent = CollisionSphereComponent;
-
-	//Add Dynamic Event To The CollisionSphere Component
-	CollisionSphereComponent->OnComponentHit.AddDynamic(this, &ARProjectileBase::OnHit);
 }
 
 void ARProjectileBase::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	CollisionSphereComponent->MoveIgnoreActors.Add(Instigator);
+	//Add Dynamic Event To The CollisionSphere Component
+	ProjectileMovement->OnProjectileStop.AddDynamic(this, &ARProjectileBase::OnImpact);
+	ProjectileMovement->OnProjectileBounce.AddDynamic(this, &ARProjectileBase::OnBounce);
+	
+	//Gets Instigator And Adds It To The IngoreWhenMoving Array.
+	CollisionComponent->MoveIgnoreActors.Add(Instigator);
+}
 
-	MyController = GetInstigatorController();
+void ARProjectileBase::OnImpact(const FHitResult & HitResult)
+{
+	if (Role == ROLE_Authority)
+		HandleImpact(HitResult);
+	
+}
+
+void ARProjectileBase::OnBounce(const FHitResult& HitResult, const FVector& ImpactVelocity)
+{
+	if (Role == ROLE_Authority)
+		HandleImpact(HitResult);
+	
 }
 
 void ARProjectileBase::Destroyed()
 {
-	ProjectileDeathEffect();
+	if (Role == ROLE_Authority)
+		HandleDeath();
+	
+}
+
+void ARProjectileBase::ApplyRadialDamage(float BaseDamage, float Radius)
+{
+	UGameplayStatics::ApplyRadialDamage(GetWorld(), BaseDamage, GetActorLocation(), Radius, UDamageType::StaticClass(), TArray<AActor*>(), this, GetInstigatorController());
+}
+
+void ARProjectileBase::ApplyDamage(const FHitResult& Impact, float BaseDamage)
+{
+	Impact.GetActor()->TakeDamage(BaseDamage, FDamageEvent(), GetInstigatorController(), this);
+}
+
+void ARProjectileBase::SpawnImpactParticle_Implementation(FTransform SpawnTransform)
+{
+	//If there is a valid impact particle effect spawn it
+	if (ProjectileImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjectileImpactParticle, SpawnTransform, true);
 }

@@ -24,10 +24,7 @@ public:
 
 	//OnHit Particle Effect
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
-	UParticleSystem* ProjectileDeathParticle;
-
-	/** Returns ProjectileMovement subobject **/
-	FORCEINLINE class UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
+	UParticleSystem* ProjectileImpactParticle;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // BProjectile Components
@@ -36,12 +33,16 @@ public:
 public:
 
 	/** Projectile movement component */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-	class UProjectileMovementComponent* ProjectileMovement;
+	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
+	UProjectileMovementComponent* ProjectileMovement;
 
 	/** Sphere Component */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-	class USphereComponent* CollisionSphereComponent;
+	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
+	USphereComponent* CollisionComponent;
+
+	/** Sphere Component */
+	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
+	UParticleSystemComponent* ParticleComponent;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Other Functions
@@ -49,18 +50,24 @@ public:
 
 public:
 
-	//Server Functions
-	UFUNCTION(Reliable, NetMulticast)
-	virtual void ProjectileDeathEffect();
-	virtual void ProjectileDeathEffect_Implementation() {}
-
 	//OnHit Function
 	UFUNCTION()
-	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit) {}
+	void OnImpact(const FHitResult& HitResult);
+
+	UFUNCTION()
+	void OnBounce(const FHitResult& HitResult, const FVector& ImpactVelocity);
+
+	virtual void HandleImpact(const FHitResult& Impact) {}
+	virtual void HandleDeath() {}
+
+	void ApplyRadialDamage(float BaseDamage, float Radius);
+	void ApplyDamage(const FHitResult& Impact, float BaseDamage);
 
 	virtual void Destroyed();
 
-protected:
+	//Server Functions
+	UFUNCTION(Reliable, NetMulticast)
+	void SpawnImpactParticle(FTransform SpawnTransform);
+	void SpawnImpactParticle_Implementation(FTransform SpawnTransform);
 
-	TWeakObjectPtr<AController> MyController;
 };

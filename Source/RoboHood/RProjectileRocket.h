@@ -12,10 +12,7 @@ class ROBOHOOD_API ARProjectileRocket : public ARProjectileBase
 	
 public:	
 
-	void ProjectileDeathEffect_Implementation();
+	void HandleImpact(const FHitResult& Impact);
 
-protected:
-
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
 
 };

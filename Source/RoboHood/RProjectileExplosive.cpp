@@ -6,39 +6,21 @@
 #include "RCharacter.h"
 #include "Public/EngineUtils.h"
 
-ARProjectileExplosive::ARProjectileExplosive()
+void ARProjectileExplosive::HandleImpact(const FHitResult& Impact)
 {
-	ProjectileMovement->bShouldBounce = true;
-	ProjectileMovement->Bounciness = 0.8f;
-
-	CollisionSphereComponent->SetSphereRadius(18.0f);
-
-	RootComponent = CollisionSphereComponent;
-
-	InitialLifeSpan = 3.0f;
-}
-
-void ARProjectileExplosive::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
-{
-	if (OtherActor->IsA(ARCharacter::StaticClass()) && OtherActor != GetInstigator())
+	if (Impact.Actor->IsA(ARCharacter::StaticClass()))
 	{
-		Destroy();		
+		Destroy();
 	}
 }
 
-void ARProjectileExplosive::ProjectileDeathEffect_Implementation()
+void ARProjectileExplosive::HandleDeath()
 {
-	for (TActorIterator<ARCharacter> aItr(GetWorld()); aItr; ++aItr)
-	{
-		float distance = GetDistanceTo(*aItr);
-		if (distance <= 350.0f)
-		{
-			FPointDamageEvent DmgEvent;
-			aItr->TakeDamage(60.0f - (distance / 6), DmgEvent, GetInstigatorController(), this);
-		}
-	}
+	ApplyRadialDamage(100, 500);
 
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjectileDeathParticle, GetActorTransform(), true);
+	DrawDebugSphere(GetWorld(), GetActorLocation(), 500, 32, FColor(255, 0, 0), false, 2.5f, false, 5.f);
+
+	SpawnImpactParticle(GetActorTransform());
+	
 }
-
 

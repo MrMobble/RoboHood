@@ -9,7 +9,7 @@
 ARHUD::ARHUD(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	/* You can use the FObjectFinder in C++ to reference content directly in code. Although it's advisable to avoid this and instead assign content through Blueprint child classes. */
-	static ConstructorHelpers::FObjectFinder<UTexture2D> HUDCenterDotObj(TEXT("/Game/UI/Textures/ReticleImage"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> HUDCenterDotObj(TEXT("/Game/UI/UIAssets/Textures/ReticleImage"));
 	CenterDotIcon = UCanvas::MakeIcon(HUDCenterDotObj.Object);
 
 }

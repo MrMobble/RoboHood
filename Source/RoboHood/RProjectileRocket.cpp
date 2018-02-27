@@ -9,23 +9,14 @@
 //Class Includes
 #include "RCharacter.h"
 
-void ARProjectileRocket::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+void ARProjectileRocket::HandleImpact(const FHitResult& Impact)
 {
+	ApplyRadialDamage(100, 500);
 
-	for (TActorIterator<ARCharacter> aItr(GetWorld()); aItr; ++aItr)
-	{
-		float distance = GetDistanceTo(*aItr);
-		if (distance <= 400.0f)
-		{
-			FPointDamageEvent DmgEvent;
-			aItr->TakeDamage(70.0f - (distance / 7), DmgEvent, GetInstigatorController(), this);
-		}
-	}
+	DrawDebugSphere(GetWorld(), GetActorLocation(), 500, 32, FColor(255, 0, 0), false, 2.5f, false, 5.f);
+
+	FTransform const SpawnTransform(Impact.ImpactNormal.Rotation(), Impact.ImpactPoint + Impact.ImpactNormal * 10.0f);
+	SpawnImpactParticle(SpawnTransform);
 
 	Destroy();
-}
-
-void ARProjectileRocket::ProjectileDeathEffect_Implementation()
-{
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjectileDeathParticle, GetActorTransform(), true);
 }

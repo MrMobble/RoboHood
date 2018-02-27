@@ -12,8 +12,8 @@ ARCameraManager::ARCameraManager()
 	bAlwaysApplyModifiers = true;
 
 	CameraStyle = FName("FreeCam");
-	FreeCamDistance = 200.f;
-	FreeCamOffset = FVector(0, 35, 75);
+	FreeCamDistance = 300.f;
+	FreeCamOffset = FVector(0, 45, 75);
 }
 
 void ARCameraManager::UpdateCamera(float DeltaTime)
@@ -21,5 +21,7 @@ void ARCameraManager::UpdateCamera(float DeltaTime)
 	ARCharacter* MyPawn = PCOwner ? Cast<ARCharacter>(PCOwner->GetPawn()) : NULL;
 
 	Super::UpdateCamera(DeltaTime);
+
+	
 
 }

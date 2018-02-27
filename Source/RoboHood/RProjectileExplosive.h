@@ -9,12 +9,9 @@ class ROBOHOOD_API ARProjectileExplosive : public ARProjectileBase
 {
 	GENERATED_BODY()
 	
-protected:
-
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
-
 public:
 
-	ARProjectileExplosive();
-	void ProjectileDeathEffect_Implementation();	
+	void HandleImpact(const FHitResult& Impact);
+
+	void HandleDeath();
 };

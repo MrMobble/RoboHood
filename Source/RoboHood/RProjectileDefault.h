@@ -9,12 +9,7 @@ class ROBOHOOD_API ARProjectileDefault : public ARProjectileBase
 {
 	GENERATED_BODY()
 
-protected:
-
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
-
 public:
 
-	void ProjectileDeathEffect_Implementation();
-	
+	void HandleImpact(const FHitResult& Impact);
 };

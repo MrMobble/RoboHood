@@ -106,6 +106,10 @@ public:
 	UPROPERTY(Replicated)
 	bool bWantsToRun;
 
+	bool bShiftPressed;
+
+	float fDirection;
+
 	UFUNCTION(BlueprintCallable)
 	bool IsRunning();
 

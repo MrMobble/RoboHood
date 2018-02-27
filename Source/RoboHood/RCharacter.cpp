@@ -158,7 +158,8 @@ float ARCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEve
 		Health -= ActualDamage;
 		if (Health <= 0.f)
 		{
-			Die(EventInstigator, DamageCauser);
+			if (EventInstigator && DamageCauser)
+				Die(EventInstigator, DamageCauser);
 		}
 	}
 	return ActualDamage;
@@ -177,19 +178,13 @@ bool ARCharacter::Die(AController* Killer, AActor* DamageCauser)
 {
 
 	if (!CanDie()) return false;
+	if (Killer == NULL || DamageCauser == NULL) return false;
 
 	Health = FMath::Min(0.0f, Health);
 
 	AController* const KilledPlayer = (Controller != NULL) ? Controller : Cast<AController>(GetOwner());
 
-	if (KilledPlayer) UE_LOG(LogTemp, Warning, TEXT("Killed: %s"), *KilledPlayer->GetPawn()->GetName());
-
-	//If Killer is NULL then use the last person to hit them.
-	AController* const ValidKiller = (Killer != NULL) ? Killer : LastTakeHitInfo.Killer;
-
-	if (ValidKiller) UE_LOG(LogTemp, Warning, TEXT("Killer: %s"), *ValidKiller->GetPawn()->GetName());
-
-	GetWorld()->GetAuthGameMode<ARGameMode>()->Killed(ValidKiller, KilledPlayer, this);
+	GetWorld()->GetAuthGameMode<ARGameMode>()->Killed(Killer, KilledPlayer, this);
 
 	GetCharacterMovement()->ForceReplicationUpdate();
 	
@@ -220,8 +215,10 @@ void ARCharacter::OnDeath(AController* Killer, AActor* DamageCauser)
 	}
 	SetActorEnableCollision(true);
 
-	if (DeathAnim) GetMesh()->PlayAnimation(DeathAnim, false);
-	SetLifeSpan(5.0f);
+	//if (DeathAnim) GetMesh()->PlayAnimation(DeathAnim, false);
+	//SetLifeSpan(5.0f);
+
+	SetRagDoll();
 
 	// disable collisions on capsule
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -301,30 +298,27 @@ void ARCharacter::LookUpAtRate(float Rate)
 //Move Forward/Back Function
 void ARCharacter::MoveForward(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f) && !bWantsToRun)
+	fDirection = Value;
+
+	if ((Controller != NULL) && (Value != 0.0f))
 	{
+		if (Value < 0) SetRunning(false);
+
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 
 		AddMovementInput(Direction, Value);
 	}
-	else if ((Controller != NULL) && (Value > 0.0f))
-	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-		AddMovementInput(Direction, Value);
-	}
-	
 }
 
 //Move Left/Right Function
 void ARCharacter::MoveRight(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f) && !bWantsToRun)
+	if ((Controller != NULL) && (Value != 0.0f))
 	{
+		if (bWantsToRun) SetRunning(false);
+
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
@@ -452,10 +446,7 @@ void ARCharacter::OnStopFire() { StopWeaponFire(); }
 
 void ARCharacter::StartWeaponFire()
 {
-	if (IsRunning())
-	{
-		SetRunning(false);
-	}
+	if (bWantsToRun) return;
 
 	if (!bWantsToFire)
 	{
@@ -476,17 +467,13 @@ void ARCharacter::StopWeaponFire()
 void ARCharacter::ReloadWeapon()
 {
 	if (CurrentWeapon)
-	{
 		CurrentWeapon->StartRecharge();
-	}
 }
 
 void ARCharacter::AddAmmo(int32 AmmoIndex)
 {
 	if (CurrentWeapon)
-	{
 		Inventory[AmmoIndex]->IncreaseAmmo();
-	}
 }
 
 // Called every frame
@@ -494,9 +481,11 @@ void ARCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	//UE_LOG(LogTemp, Warning, TEXT("Your message"));
 
 	SetPitch();
+
+	if (bShiftPressed)
+		if (fDirection > 0) SetRunning(true);
 }
 
 bool ARCharacter::IsAlive()
@@ -522,11 +511,12 @@ bool ARCharacter::IsRunning()
 
 void ARCharacter::StartRunning()
 {
-	SetRunning(true);
+	bShiftPressed = true;
 }
 
 void ARCharacter::StopRunning()
 {
+	bShiftPressed = false;
 	SetRunning(false);
 }
 

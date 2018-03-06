@@ -70,8 +70,8 @@ void ARCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	check(PlayerInputComponent);
 
 	//Jump Input
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ARCharacter::StartJump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ARCharacter::StopJump);
 
 	//Movement Input
 	PlayerInputComponent->BindAxis("MoveForward", this, &ARCharacter::MoveForward);
@@ -111,6 +111,8 @@ void ARCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ARCharacter, Inventory);
 
 	DOREPLIFETIME(ARCharacter, AimPitch);
+
+	DOREPLIFETIME(ARCharacter, bPendingJump);
 
 	//DOREPLIFETIME(ARCharacter, AnimDirection);
 
@@ -486,6 +488,46 @@ void ARCharacter::Tick(float DeltaTime)
 
 	if (bShiftPressed)
 		if (fDirection > 0) SetRunning(true);
+}
+
+
+void ARCharacter::OnRep_Jump()
+{
+	if (bPendingJump) StartJump();
+}
+
+void ARCharacter::StartJump()
+{
+	//if (!GetCharacterMovement()->IsFalling())
+	if (!bPendingJump && !GetMovementComponent()->IsFalling()) bPendingJump = true;
+	
+	//if (Jump_Montage)
+	//{
+	//	PlayAnimMontage(Jump_Montage);
+	//}
+}
+
+void ARCharacter::StopJump()
+{
+	//bPendingJump = false;
+	StopJumping();
+}
+
+float ARCharacter::PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
+{
+	USkeletalMeshComponent* UseMesh = GetPawnMesh();
+	if (AnimMontage && UseMesh && UseMesh->AnimScriptInstance)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Your message2"));
+		return UseMesh->AnimScriptInstance->Montage_Play(AnimMontage, InPlayRate);
+	}
+
+	return 0.0f;
+}
+
+USkeletalMeshComponent* ARCharacter::GetPawnMesh() const
+{
+	return GetMesh();
 }
 
 bool ARCharacter::IsAlive()

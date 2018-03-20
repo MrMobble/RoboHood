@@ -42,6 +42,7 @@ ARCharacter::ARCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
 	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = 0.2f;
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 
 	////Create A Camera Boom (Pulls In Towards The Player If There Is A Collision)
 	//CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -70,8 +71,8 @@ void ARCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	check(PlayerInputComponent);
 
 	//Jump Input
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ARCharacter::StartJump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ARCharacter::StopJump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	//Movement Input
 	PlayerInputComponent->BindAxis("MoveForward", this, &ARCharacter::MoveForward);
@@ -111,14 +112,6 @@ void ARCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ARCharacter, Inventory);
 
 	DOREPLIFETIME(ARCharacter, AimPitch);
-
-	DOREPLIFETIME(ARCharacter, bPendingJump);
-
-	//DOREPLIFETIME(ARCharacter, AnimDirection);
-
-	//DOREPLIFETIME(ARCharacter, AnimSpeed);
-
-	DOREPLIFETIME_CONDITION(ARCharacter, bWantsToRun, COND_SkipOwner);
 
 	DOREPLIFETIME(ARCharacter, LastTakeHitInfo);
 }
@@ -216,9 +209,6 @@ void ARCharacter::OnDeath(AController* Killer, AActor* DamageCauser)
 		GetMesh()->SetCollisionProfileName(CollisionProfileName);
 	}
 	SetActorEnableCollision(true);
-
-	//if (DeathAnim) GetMesh()->PlayAnimation(DeathAnim, false);
-	//SetLifeSpan(5.0f);
 
 	SetRagDoll();
 
@@ -490,46 +480,6 @@ void ARCharacter::Tick(float DeltaTime)
 		if (fDirection > 0) SetRunning(true);
 }
 
-
-void ARCharacter::OnRep_Jump()
-{
-	if (bPendingJump) StartJump();
-}
-
-void ARCharacter::StartJump()
-{
-	//if (!GetCharacterMovement()->IsFalling())
-	if (!bPendingJump && !GetMovementComponent()->IsFalling()) bPendingJump = true;
-	
-	//if (Jump_Montage)
-	//{
-	//	PlayAnimMontage(Jump_Montage);
-	//}
-}
-
-void ARCharacter::StopJump()
-{
-	//bPendingJump = false;
-	StopJumping();
-}
-
-float ARCharacter::PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
-{
-	USkeletalMeshComponent* UseMesh = GetPawnMesh();
-	if (AnimMontage && UseMesh && UseMesh->AnimScriptInstance)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Your message2"));
-		return UseMesh->AnimScriptInstance->Montage_Play(AnimMontage, InPlayRate);
-	}
-
-	return 0.0f;
-}
-
-USkeletalMeshComponent* ARCharacter::GetPawnMesh() const
-{
-	return GetMesh();
-}
-
 bool ARCharacter::IsAlive()
 {
 	return Health > 0;
@@ -567,9 +517,9 @@ void ARCharacter::SetRunning(bool bNewValue)
 	bWantsToRun = bNewValue;
 
 	if (bNewValue)
-		GetCharacterMovement()->MaxWalkSpeed = 600.f;
+		GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
 	else if (!bNewValue)
-		GetCharacterMovement()->MaxWalkSpeed = 300.f;
+		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 
 	if (bWantsToRun)
 		StopWeaponFire();

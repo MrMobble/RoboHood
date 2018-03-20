@@ -81,8 +81,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	float BaseLookUpRate;
 
+	UPROPERTY(EditAnywhere)
+	float RunSpeed;
+
+	UPROPERTY(EditAnywhere)
+	float WalkSpeed;
+
 	//Player Health Replicated
-	UPROPERTY(Replicated, BlueprintReadOnly)
+	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
 	float Health;
 
 	//Identifies if pawn is in its dying state

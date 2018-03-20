@@ -41,10 +41,6 @@ public:
 	//Called To Bind Functionality To Input.
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
-
-	USkeletalMeshComponent* GetPawnMesh() const;
-
 	//Allow Actors To Initialize Themselves.
 	virtual void PostInitializeComponents();
 
@@ -84,18 +80,6 @@ public:
 	//Base Look Up/Down Rate
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	float BaseLookUpRate;
-
-	UPROPERTY(Transient, ReplicatedUsing = OnRep_Jump, BlueprintReadOnly)
-	uint32 bPendingJump : 1;
-
-	UFUNCTION()
-	void OnRep_Jump();
-
-	UPROPERTY(EditDefaultsOnly)
-	class UAnimMontage* Jump_Montage;
-
-	void StartJump();
-	void StopJump();
 
 	//Player Health Replicated
 	UPROPERTY(Replicated, BlueprintReadOnly)

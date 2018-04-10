@@ -39,7 +39,6 @@ ARCharacter::ARCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
 	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = 0.2f;
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 
 	//Create A Camera Boom (Pulls In Towards The Player If There Is A Collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -542,20 +541,10 @@ void ARCharacter::SetRunning(bool bNewValue)
 {
 	bWantsToRun = bNewValue;
 
-<<<<<<< HEAD
 	if (bNewValue) GetCharacterMovement()->MaxWalkSpeed = Run_Speed;	
 	else if (!bNewValue) GetCharacterMovement()->MaxWalkSpeed = Walk_Speed;
 	
 	if (bWantsToRun) StopWeaponFire();
-=======
-	if (bNewValue)
-		GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
-	else if (!bNewValue)
-		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-
-	if (bWantsToRun)
-		StopWeaponFire();
->>>>>>> 0a8dd5694cd1f877fb0fe2b9d40e8b4dc5ceeb61
 
 	if (Role < ROLE_Authority)
 	{

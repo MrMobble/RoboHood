@@ -67,19 +67,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	float BaseLookUpRate;
 
-<<<<<<< HEAD
 	UPROPERTY(EditDefaultsOnly, Category = Camera)
 	float CameraDistance;
 
 	UPROPERTY(EditDefaultsOnly, Category = Camera)
 	FVector CameraOffset;
-=======
-	UPROPERTY(EditAnywhere)
-	float RunSpeed;
-
-	UPROPERTY(EditAnywhere)
-	float WalkSpeed;
->>>>>>> 0a8dd5694cd1f877fb0fe2b9d40e8b4dc5ceeb61
 
 	//Player Health Replicated
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)

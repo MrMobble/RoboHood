@@ -16,11 +16,12 @@ void ARProjectileExplosive::HandleImpact(const FHitResult& Impact)
 
 void ARProjectileExplosive::HandleDeath()
 {
-	ApplyRadialDamage(100, 500);
+	ApplyRadialDamage(ProjectileDamage, ProjectileRadius);
 
-	DrawDebugSphere(GetWorld(), GetActorLocation(), 500, 32, FColor(255, 0, 0), false, 2.5f, false, 5.f);
+	//DrawDebugSphere(GetWorld(), GetActorLocation(), 500, 32, FColor(255, 0, 0), false, 2.5f, false, 5.f);
 
-	SpawnImpactParticle(GetActorTransform());
+	FTransform const SpawnTransform(GetActorRotation(), GetActorLocation(), ParticleScale);
+	SpawnParticle(SpawnTransform);
 	
 }
 

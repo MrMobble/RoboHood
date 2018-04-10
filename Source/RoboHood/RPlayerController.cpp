@@ -15,7 +15,6 @@
 #include "RGameState.h"
 #include "RGameInstance.h"
 #include "RPlayerState.h"
-#include "RCameraManager.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // General Functions And Variables
@@ -23,11 +22,7 @@
 
 ARPlayerController::ARPlayerController()
 {
-	PlayerCameraManagerClass = ARCameraManager::StaticClass();
 
-	//ARCameraManager* CM = Cast<ARCameraManager>(PlayerCameraManagerClass);
-	//CM->SetPivotOffset(FVector(50, 50, 50));
-	//Seems To Be Empty
 }
 
 void ARPlayerController::OnKilled()

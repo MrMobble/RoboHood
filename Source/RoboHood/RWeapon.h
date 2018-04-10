@@ -28,24 +28,13 @@ class ROBOHOOD_API ARWeapon : public AActor
 	
 public:	
 
-	//Is This The Default Weapon?.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Info")
-	bool bDefaultWeapon;
-
-	UFUNCTION(BlueprintCallable)
-	bool GetDefaultWeapon() { return bDefaultWeapon; }
-
 	//Projectile.
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
 	TSubclassOf<class ARProjectileBase> ProjectileBP;
 
 	//FireRate.
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
 	float TimeBetweenShots;
-
-	//OnHit Particle Effect
-	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
-	UParticleSystem* MuzzleFlash;
 
 public:
 
@@ -119,13 +108,13 @@ private:
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerStartFire();
 	void ServerStartFire_Implementation();
-	bool ServerStartFire_Validate();
+	bool ServerStartFire_Validate() { return true; }
 
 	//Server Function For StopFire
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerStopFire();
 	void ServerStopFire_Implementation();
-	bool ServerStopFire_Validate();
+	bool ServerStopFire_Validate() { return true; }
 
 	//Handle Fireing
 	void HandleFiring();
@@ -134,7 +123,7 @@ private:
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerHandleFiring();
 	void ServerHandleFiring_Implementation();
-	bool ServerHandleFiring_Validate();
+	bool ServerHandleFiring_Validate() { return true; }
 
 	//Calculate Projectile Trajectory
 	void FireWeapon();
@@ -146,7 +135,7 @@ private:
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerFireWeapon();
 	void ServerFireWeapon_Implementation();
-	bool ServerFireWeapon_Validate();
+	bool ServerFireWeapon_Validate() { return true; }
 
 	//Does A RayCast For The Weapon
 	FHitResult WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const;
@@ -182,49 +171,73 @@ private:
 
 public:
 
-	virtual void StartRecharge();
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Ammo
 
-	// - AMMO ----------------------------------------------------------
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
-	int32 StartAmmo;
+	UPROPERTY(Transient, Replicated)
+	int32 CurrentAmmo;
 
-	//MaxHeat
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Info")
-	int32 MaxAmmo;
-	// -----------------------------------------------------------------
+	////////////////////////////////////////////////////////////////
+	// Weapon Propertys
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
+	int32 AmmoPerClip;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
 	bool bCanReload;
 
-	//ReloadTime
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Info")
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
 	float ReloadWeaponTime;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Info")
-	FName MuzzleBone;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
+	FName MuzzleBone_Name;
 
-	//Weapons Current Ammo Replicated
-	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
-	int32 CurrentAmmo;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
+	UParticleSystem* MuzzleFlash_Particle;
+
+	//
+	////////////////////////////////////////////////////////////////
+
+	bool bIsReloading;
+
+	FTimerHandle TimerHandle_ReloadWeapon;
+
+	////////////////////////////////////////////////////////////////
+	// Weapon Getters
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetCurrentAmmo() { return CurrentAmmo; }
 
-	UPROPERTY(BlueprintReadOnly)
-	bool bIsReloading;
+	UFUNCTION(BlueprintCallable)
+	int32 GetClipSize() { return AmmoPerClip; }
 
-	UPROPERTY(BlueprintReadOnly)
-	FTimerHandle TimerHandle_ReloadWeapon;
+	UFUNCTION(BlueprintCallable)
+	float GetReloadTime() { return ReloadWeaponTime; }
 
-	void IncreaseAmmo();
+	UFUNCTION(BlueprintCallable)
+	FTimerHandle GetReloadTimeHandler() { return TimerHandle_ReloadWeapon; }
 
-	void SpawnMuzzleFlash();
+	UFUNCTION(BlueprintCallable)
+	bool GetDefaultWeapon() { return bCanReload; }
 
-	UPROPERTY(ReplicatedUsing = OnRep_MFlash)
-	bool MFlash;
+	//
+	////////////////////////////////////////////////////////////////
+
+	virtual void StartRecharge();
+
+	void IncreaseAmmo(int32 Ammount);
+
+	//
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// MuzzleFlash
+
+	UPROPERTY(ReplicatedUsing = OnRep_BurstCounter)
+	int32 BurstCounter;
 
 	UFUNCTION()
-	void OnRep_MFlash();
+	void OnRep_BurstCounter();
+
+	void SpawnMuzzleFlash();
 
 protected:
 

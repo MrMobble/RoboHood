@@ -20,9 +20,6 @@ ARCharacter::ARCharacter()
  	//Set This Character To Call Tick() Every Frame.  You Can Turn This Off To Improve Performance If You Don't Need It.
 	PrimaryActorTick.bCanEverTick = true;
 
-	//Set Player Health
-	Health = 100.f;
-
 	CurrentWeaponIndex = 0;
 
 	//Set Size For Collision Capsule
@@ -43,16 +40,16 @@ ARCharacter::ARCharacter()
 	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = 0.2f;
 
-	////Create A Camera Boom (Pulls In Towards The Player If There Is A Collision)
-	//CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	//CameraBoom->SetupAttachment(RootComponent);
-	//CameraBoom->TargetArmLength = 300.0f;	
-	//CameraBoom->bUsePawnControlRotation = true;
+	//Create A Camera Boom (Pulls In Towards The Player If There Is A Collision)
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(RootComponent);
+	CameraBoom->TargetArmLength = 300.0f;	
+	CameraBoom->bUsePawnControlRotation = true;
 
-	////Create a follow camera
-	//TPPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TPPCamera"));
-	//TPPCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-	//TPPCamera->bUsePawnControlRotation = false;
+	//Create a follow camera
+	TPPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TPPCamera"));
+	TPPCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	TPPCamera->bUsePawnControlRotation = false;
 
 	//FPPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FPPCamera"));
 	//FPPCamera->SetupAttachment(GetMesh());
@@ -120,6 +117,10 @@ void ARCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
+	Health = Base_Health;
+
+	GetCharacterMovement()->MaxWalkSpeed = Walk_Speed;
+
 	SpawnWeapons();
 }
 
@@ -147,37 +148,31 @@ float ARCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEve
 {
 	// Call the base class - this will tell us how much damage to apply  
 	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+
 	if (ActualDamage > 0.f)
 	{
 		Health -= ActualDamage;
 		if (Health <= 0.f)
 		{
 			if (EventInstigator && DamageCauser)
+			{
 				Die(EventInstigator, DamageCauser);
+			}
 		}
 	}
 	return ActualDamage;
 }
 
-bool ARCharacter::CanDie()
+//Tells gamemode that you died.
+bool ARCharacter::Die(class AController* Killer, class AActor* DamageCauser)
 {
-	if (bIsDying || IsPendingKill() || Role != ROLE_Authority || GetWorld()->GetAuthGameMode<ARGameMode>() == NULL)
-	{
-		return false;
-	}
-	return true;
-}
-
-bool ARCharacter::Die(AController* Killer, AActor* DamageCauser)
-{
-
 	if (!CanDie()) return false;
 	if (Killer == NULL || DamageCauser == NULL) return false;
 
 	Health = FMath::Min(0.0f, Health);
-
 	AController* const KilledPlayer = (Controller != NULL) ? Controller : Cast<AController>(GetOwner());
 
+	//Tell the gamemode that someone died (gamemode handles adding score and respawning player).
 	GetWorld()->GetAuthGameMode<ARGameMode>()->Killed(Killer, KilledPlayer, this);
 
 	GetCharacterMovement()->ForceReplicationUpdate();
@@ -186,7 +181,8 @@ bool ARCharacter::Die(AController* Killer, AActor* DamageCauser)
 	return true;
 }
 
-void ARCharacter::OnDeath(AController* Killer, AActor* DamageCauser)
+//Handles death
+void ARCharacter::OnDeath(class AController* Killer, class AActor* DamageCauser)
 {
 	if (bIsDying) return;
 
@@ -216,6 +212,7 @@ void ARCharacter::OnDeath(AController* Killer, AActor* DamageCauser)
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 }
 
+//Apply ragdoll physics.
 void ARCharacter::SetRagDoll()
 {
 	bool bInRagdoll = false;
@@ -255,19 +252,31 @@ void ARCharacter::SetRagDoll()
 	}
 }
 
-void ARCharacter::ReplicateHit(AController* Killer, AActor* DamageCauser, bool bKilled)
+//Replicates the hit that killed the player.
+void ARCharacter::ReplicateHit(class AController* Killer, class AActor* DamageCauser, bool bKilled)
 {
 	LastTakeHitInfo.Killer = Killer;
 	LastTakeHitInfo.DamageCauser = DamageCauser;
 	LastTakeHitInfo.bKilled = bKilled;
 }
 
+//On Replication function
 void ARCharacter::OnRep_LastTakeHitInfo()
 {
 	if (LastTakeHitInfo.bKilled)
 	{
 		OnDeath(LastTakeHitInfo.Killer, LastTakeHitInfo.DamageCauser);
 	}
+}
+
+//Check if player can die
+bool ARCharacter::CanDie()
+{
+	if (bIsDying || IsPendingKill() || Role != ROLE_Authority || GetWorld()->GetAuthGameMode<ARGameMode>() == NULL)
+	{
+		return false;
+	}
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -342,11 +351,8 @@ void ARCharacter::EquipWeapon(ARWeapon* TheWeapon)
 	//If The Weapon Is Valid
 	if (TheWeapon)
 	{
-		if (TheWeapon == CurrentWeapon) 
-		{
-			return;
-		}
-
+		if (TheWeapon == CurrentWeapon) return;
+		
 		if (Role == ROLE_Authority) { SetCurrentWeapon(TheWeapon, CurrentWeapon); }
 		else { ServerEquipWeapon(TheWeapon); }
 	}
@@ -364,22 +370,34 @@ void ARCharacter::OnRep_CurrentWeapon(ARWeapon* LastWeapon)
 
 void ARCharacter::SetCurrentWeapon(class ARWeapon* NewWeapon, class ARWeapon* LastWeapon)
 {
-	PreviousWeapon = LastWeapon;
-
 	ARWeapon* LocalLastWeapon = nullptr;
-	if (LastWeapon) { LocalLastWeapon = LastWeapon; }
 
-	if (LocalLastWeapon) { LocalLastWeapon->OnUnEquip(); }
+	if (LastWeapon != NULL)
+	{
+		LocalLastWeapon = LastWeapon;
+	}
+	else if (NewWeapon != CurrentWeapon)
+	{
+		LocalLastWeapon = CurrentWeapon;
+	}
+
+	//Unequip Previous Weapon
+	if (LocalLastWeapon)
+	{
+		LocalLastWeapon->OnUnEquip();
+	}
 
 	CurrentWeapon = NewWeapon;
 
+	//Equip New Weapon
 	if (NewWeapon)
 	{
 		NewWeapon->SetOwningPawn(this);
+
 		NewWeapon->OnEquip();
 	}
 
-	SwapToNewWeaponMesh();
+	//SwapToNewWeaponMesh(); New Method Does Not Use This
 }
 
 FName ARCharacter::GetWeaponAttachPoint() { return WeaponAttachPoint; }
@@ -461,10 +479,18 @@ void ARCharacter::ReloadWeapon()
 		CurrentWeapon->StartRecharge();
 }
 
-void ARCharacter::AddAmmo(int32 AmmoIndex)
+void ARCharacter::AddAmmo(int32 AmmoIndex, int32 Ammount)
 {
 	if (CurrentWeapon)
-		Inventory[AmmoIndex]->IncreaseAmmo();
+		Inventory[AmmoIndex]->IncreaseAmmo(Ammount);
+}
+
+void ARCharacter::AddHealth(int32 Ammount)
+{
+	Health += Ammount;
+
+	//Checks if health is greater then base health.
+	if (Health > Base_Health) Health = Base_Health;
 }
 
 // Called every frame
@@ -515,13 +541,10 @@ void ARCharacter::SetRunning(bool bNewValue)
 {
 	bWantsToRun = bNewValue;
 
-	if (bNewValue)
-		GetCharacterMovement()->MaxWalkSpeed = 1000.f;
-	else if (!bNewValue)
-		GetCharacterMovement()->MaxWalkSpeed = 600.f;
-
-	if (bWantsToRun)
-		StopWeaponFire();
+	if (bNewValue) GetCharacterMovement()->MaxWalkSpeed = Run_Speed;	
+	else if (!bNewValue) GetCharacterMovement()->MaxWalkSpeed = Walk_Speed;
+	
+	if (bWantsToRun) StopWeaponFire();
 
 	if (Role < ROLE_Authority)
 	{

@@ -17,32 +17,65 @@ public:
 
 	virtual void PostInitializeComponents() override;
 
+	virtual void Tick(float DeltaTime) override;
+
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	UPROPERTY(VisibleDefaultsOnly, Category = "SpawnerMesh")
+	//////////////////////////////////////////////////////////////////////////////////////////
+	// Components
+
+	UPROPERTY(VisibleDefaultsOnly)
+	UBoxComponent* Collider;
+
+	UPROPERTY(VisibleDefaultsOnly)
 	UStaticMeshComponent* SpawnerMesh;
 
+	UPROPERTY(VisibleDefaultsOnly)
+	UStaticMeshComponent* MeshEffect;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Collectable Properties")
-	TSubclassOf<class AActor> AmmoIcon;
+	UPROPERTY(VisibleDefaultsOnly)
+	UParticleSystemComponent* ParticleEffect;
 
-	AActor* CollectableReference;
+	//
+	//////////////////////////////////////////////////////////////////////////////////////////
+	// Public Variables
 
+	UPROPERTY(EditAnywhere, Category = "Collectable Properties")
+	TSubclassOf<class AActor> PickupMesh;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Collectable Properties")
-	int32 SpawnRate;
+	UPROPERTY(EditAnywhere, Category = "Collectable Properties")
+	int32 RespawnTime;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Collectable Properties")
+	UPROPERTY(EditAnywhere, Category = "Collectable Properties")
 	int32 AmmoIndex;
+
+	UPROPERTY(EditAnywhere, Category = "Collectable Properties")
+	int32 Ammount;
+
+	UPROPERTY(EditAnywhere, Category = "Collectable Properties")
+	bool bHealth;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Material Properties")
+	UMaterialInterface* Material;
+
+	//
+	//////////////////////////////////////////////////////////////////////////////////////////
+	// Other
 
 	void SpawnCollectable();
 
 	void ActivateCollectable();
 
-	//Handles TimeBetween Shots.
+	UMaterialInstanceDynamic* DynMaterial;
+
+	AActor* CollectableReference;
+
 	FTimerHandle Timehandle_Respawn;
 
 	bool bIsActive;
+
+	//
+	//////////////////////////////////////////////////////////////////////////////////////////
 	
 };

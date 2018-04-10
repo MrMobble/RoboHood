@@ -24,7 +24,22 @@ public:
 
 	//OnHit Particle Effect
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
-	UParticleSystem* ProjectileImpactParticle;
+	UParticleSystem* DefaultImpactParticle;
+
+	//ImpactParticles For Basic Ammo
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
+	TMap<FName, UParticleSystem*> ImpactParticles;
+
+	//Scale Of The Particles, Applies To All Particles
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
+	FVector ParticleScale;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
+	float ProjectileDamage;
+
+	//Radius of explosion if applies.
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
+	float ProjectileRadius;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // BProjectile Components
@@ -67,7 +82,11 @@ public:
 
 	//Server Functions
 	UFUNCTION(Reliable, NetMulticast)
-	void SpawnImpactParticle(FTransform SpawnTransform);
-	void SpawnImpactParticle_Implementation(FTransform SpawnTransform);
+	void SpawnImpactParticle(FTransform SpawnTransform, const FHitResult& Impact);
+	void SpawnImpactParticle_Implementation(FTransform SpawnTransform, const FHitResult& Impact);
+
+	UFUNCTION(Reliable, NetMulticast)
+	void SpawnParticle(FTransform SpawnTransform);
+	void SpawnParticle_Implementation(FTransform SpawnTransform);
 
 };

@@ -50,21 +50,18 @@ void ARProjectileBase::OnImpact(const FHitResult & HitResult)
 {
 	if (Role == ROLE_Authority)
 		HandleImpact(HitResult);
-	
 }
 
 void ARProjectileBase::OnBounce(const FHitResult& HitResult, const FVector& ImpactVelocity)
 {
 	if (Role == ROLE_Authority)
-		HandleImpact(HitResult);
-	
+		HandleImpact(HitResult);	
 }
 
 void ARProjectileBase::Destroyed()
 {
 	if (Role == ROLE_Authority)
-		HandleDeath();
-	
+		HandleDeath();	
 }
 
 void ARProjectileBase::ApplyRadialDamage(float BaseDamage, float Radius)
@@ -77,8 +74,32 @@ void ARProjectileBase::ApplyDamage(const FHitResult& Impact, float BaseDamage)
 	Impact.GetActor()->TakeDamage(BaseDamage, FDamageEvent(), GetInstigatorController(), this);
 }
 
-void ARProjectileBase::SpawnImpactParticle_Implementation(FTransform SpawnTransform)
+void ARProjectileBase::SpawnImpactParticle_Implementation(FTransform SpawnTransform, const FHitResult& Impact)
+{
+	if (Impact.GetActor() != NULL)
+	{
+		for (auto& Part : ImpactParticles)
+		{
+			if (Impact.GetActor()->ActorHasTag(Part.Key))
+			{
+				if (Part.Value != NULL) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Part.Value, SpawnTransform, true);
+			}
+		}
+	}
+
+	//DEBUG SHIT
+	//TArray<FName> ObjTags = Impact.GetActor()->Tags;
+	//if (ObjTags.Num() != 0)
+	//{
+	//	for (int N = 0; N < ObjTags.Num(); N++)
+	//	{
+	//		UE_LOG(LogTemp, Warning, TEXT("%s: %s"), *Impact.GetActor()->GetName(), *ObjTags[N].ToString());
+	//	}
+	//}
+}
+
+void ARProjectileBase::SpawnParticle_Implementation(FTransform SpawnTransform)
 {
 	//If there is a valid impact particle effect spawn it
-	if (ProjectileImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjectileImpactParticle, SpawnTransform, true);
+	if (DefaultImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DefaultImpactParticle, SpawnTransform, true);
 }

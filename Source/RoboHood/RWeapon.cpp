@@ -14,7 +14,6 @@
 #include "Net/UnrealNetwork.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Character.h"
-#include "RCameraManager.h"
 
 //Default Constructor
 ARWeapon::ARWeapon()
@@ -38,8 +37,7 @@ void ARWeapon::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	MaxAmmo = MaxAmmo;
-	CurrentAmmo = StartAmmo;
+	CurrentAmmo = AmmoPerClip;
 }
 
 void ARWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -48,7 +46,8 @@ void ARWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 
 	DOREPLIFETIME(ARWeapon, MyPawn);
 
-	DOREPLIFETIME(ARWeapon, MFlash);
+	DOREPLIFETIME_CONDITION(ARWeapon, CurrentAmmo, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ARWeapon, BurstCounter, COND_SkipOwner);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,6 +69,7 @@ void ARWeapon::SetOwningPawn(class ARCharacter* NewOwner)
 void ARWeapon::OnEquip()
 {
 	AttachMeshToPawn("Hand");
+
 	bIsEquipped = true;
 	DetermineWeaponState();
 }
@@ -77,8 +77,9 @@ void ARWeapon::OnEquip()
 void ARWeapon::OnUnEquip()
 {
 	DeAttachMeshToPawn();
-	bIsEquipped = false;
+
 	StopFire();
+	bIsEquipped = false;
 	DetermineWeaponState();
 }
 
@@ -87,23 +88,31 @@ void ARWeapon::AttachMeshToPawn(FName SocketName)
 {
 	if (MyPawn)
 	{
+
+		DeAttachMeshToPawn();
+
 		USkeletalMeshComponent* PawnMesh = MyPawn->GetMesh();
+
 		FName AttachPoint = MyPawn->GetWeaponAttachPoint();
 
-		if (PawnMesh)
+		if (MyPawn->IsLocallyControlled() == true)
 		{
-			Mesh->AttachToComponent(PawnMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
-			if (SocketName == "Storage")
-				Mesh->SetHiddenInGame(true);
-			else
-				Mesh->SetHiddenInGame(false);
+			Mesh->SetHiddenInGame(false);
+			Mesh->AttachToComponent(PawnMesh, FAttachmentTransformRules::KeepRelativeTransform, AttachPoint);
+
+		}
+		else
+		{
+			Mesh->AttachToComponent(PawnMesh, FAttachmentTransformRules::KeepRelativeTransform, AttachPoint);
+			Mesh->SetHiddenInGame(false);
 		}
 	}
 }
 
 void ARWeapon::DeAttachMeshToPawn()
 {
-	Mesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	Mesh->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+	Mesh->SetHiddenInGame(true);
 }
 
 void ARWeapon::OnEnterInventory(ARCharacter* NewOwner)
@@ -142,7 +151,6 @@ void ARWeapon::StartFire()
 	}
 }
 
-
 void ARWeapon::StopFire()
 {
 	if (Role < ROLE_Authority) { ServerStopFire(); }
@@ -154,18 +162,29 @@ void ARWeapon::StopFire()
 	}
 }
 
-void ARWeapon::ServerStartFire_Implementation() { StartFire(); }
+void ARWeapon::ServerStartFire_Implementation() 
+{ 
+	StartFire(); 
+}
 
-bool ARWeapon::ServerStartFire_Validate() { return true; }
-
-void ARWeapon::ServerStopFire_Implementation() { StopFire(); }
-
-bool ARWeapon::ServerStopFire_Validate() { return true; }
+void ARWeapon::ServerStopFire_Implementation() 
+{ 
+	StopFire(); 
+}
 
 void ARWeapon::HandleFiring()
 {
 	if (CanFire())
 	{
+
+		if (GetNetMode() != NM_DedicatedServer)
+		{
+			if (CurrentAmmo > 0)
+			{
+				SpawnMuzzleFlash();
+			}
+		}
+
 		if (MyPawn && MyPawn->IsLocallyControlled())
 		{
 			if (CurrentAmmo > 0)
@@ -173,6 +192,8 @@ void ARWeapon::HandleFiring()
 				FireWeapon();
 
 				UseAmmo();
+
+				BurstCounter++;
 			}
 			else
 			{
@@ -200,7 +221,6 @@ void ARWeapon::HandleFiring()
 
 void ARWeapon::ServerHandleFiring_Implementation() 
 { 
-
 	const bool bShouldUpdateAmmo = (CurrentAmmo > 0 && CanFire());
 
 	HandleFiring(); 
@@ -208,10 +228,10 @@ void ARWeapon::ServerHandleFiring_Implementation()
 	if (bShouldUpdateAmmo)
 	{
 		UseAmmo();
+
+		BurstCounter++;
 	}
 }
-
-bool ARWeapon::ServerHandleFiring_Validate() { return true; }
 
 //This Function Needs Alot OF CleanUp And Fixing
 void ARWeapon::FireWeapon()
@@ -268,16 +288,10 @@ void ARWeapon::FireWeapon()
 		}
 	}
 
-	if (MuzzleFlash) SpawnMuzzleFlash();
-	MFlash = !MFlash;
+	//if (MuzzleFlash_Particle) SpawnMuzzleFlash();
+	//BurstCounter++;
 	
-	SpawnProjectile(Origin, ShootDir);
-
-
-	//UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent());
-	//if (Primitive && Proj) Primitive->IgnoreActorWhenMoving(Proj, true);
-
-	
+	SpawnProjectile(Origin, ShootDir);	
 }
 
 void ARWeapon::SpawnProjectile(FVector Origin, FVector ShootDir)
@@ -286,13 +300,16 @@ void ARWeapon::SpawnProjectile(FVector Origin, FVector ShootDir)
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.Instigator = Instigator;
 
-	if (ProjectileBP)
+	if (ProjectileBP != NULL)
+	{
 		ARProjectileBase* Proj = GetWorld()->SpawnActor<ARProjectileBase>(ProjectileBP, Origin, ShootDir.Rotation(), SpawnParams);
+	}
 }
 
-void ARWeapon::ServerFireWeapon_Implementation() { FireWeapon(); }
-
-bool ARWeapon::ServerFireWeapon_Validate() { return true; }
+void ARWeapon::ServerFireWeapon_Implementation() 
+{
+	FireWeapon(); 
+}
 
 FHitResult ARWeapon::WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const
 {
@@ -323,6 +340,8 @@ void ARWeapon::OnBurstStarted()
 
 void ARWeapon::OnBurstFinished()
 {
+	BurstCounter = 0;
+
 	GetWorldTimerManager().ClearTimer(HandleFiringTimerHandle);
 	bRefiring = false;
 }
@@ -387,12 +406,12 @@ void ARWeapon::UseAmmo()
 {
 	CurrentAmmo--;
 
-	UE_LOG(LogTemp, Warning, TEXT("CurrentAmmo: %d"), CurrentAmmo);
+	//UE_LOG(LogTemp, Warning, TEXT("CurrentAmmo: %d"), CurrentAmmo);
 }
 
 void ARWeapon::StartRecharge()
 {
-	if (bCanReload)
+	if (bCanReload && CurrentAmmo != AmmoPerClip && !bIsReloading)
 	{
 		bIsReloading = true;
 		DetermineWeaponState();
@@ -409,38 +428,39 @@ void ARWeapon::StopRecharge()
 
 void ARWeapon::RechargeWeapon()
 {
-	CurrentAmmo = MaxAmmo;
+	CurrentAmmo = AmmoPerClip;
 
 	StopRecharge();
 }
 
-void ARWeapon::IncreaseAmmo()
+void ARWeapon::IncreaseAmmo(int32 Ammount)
 {
-	CurrentAmmo += 15;
+	CurrentAmmo += Ammount;
 }
 
 void ARWeapon::SpawnMuzzleFlash()
 {
+
+	if (Role == ROLE_Authority && CurrentState != EWeaponState::Firing)
+	{
+		return;
+	}
+
 	//This is the position on the muzzle
 	FRotator Rotation = FRotator(90, 90, 0);
 
-	if (MuzzleFlash)
-		UGameplayStatics::SpawnEmitterAttached(MuzzleFlash, Mesh, MuzzleBone, FVector::ZeroVector, Rotation, EAttachLocation::SnapToTarget);
+	if (MuzzleFlash_Particle)
+	{
+		UGameplayStatics::SpawnEmitterAttached(MuzzleFlash_Particle, Mesh, MuzzleBone_Name, FVector::ZeroVector, Rotation, EAttachLocation::SnapToTarget);
+	}
 }
 
-void ARWeapon::OnRep_MFlash()
+void ARWeapon::OnRep_BurstCounter()
 {
-	if (Role < ROLE_Authority)
+	if (BurstCounter > 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Client"));
+		SpawnMuzzleFlash();
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Server"));
-	}
-
-	SpawnMuzzleFlash();
-
 }
 
 //Aim Function
@@ -486,10 +506,10 @@ FVector ARWeapon::GetCameraDamageStartLocation(const FVector& AimDir)
 
 FVector ARWeapon::GetMuzzleLocation()
 {
-	return Mesh->GetSocketLocation(MuzzleBone);
+	return Mesh->GetSocketLocation(MuzzleBone_Name);
 }
 
 FVector ARWeapon::GetMuzzleDirection()
 {
-	return Mesh->GetSocketRotation(MuzzleBone).Vector();
+	return Mesh->GetSocketRotation(MuzzleBone_Name).Vector();
 }

@@ -11,8 +11,6 @@ ARBot::ARBot()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	Direction = GetActorForwardVector();
-
 	//Setting up the Collision Sphere Component
 	CollisionSphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
 	Movement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
@@ -29,15 +27,26 @@ void ARBot::BeginPlay()
 {
 	Super::BeginPlay();
 
+	GetWorldTimerManager().SetTimer(timerHandle, this, &ARBot::Shoot, timeBetweenShots, false);
 }
 
 void ARBot::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
 {
 	NewForwardDirection.Yaw = FMath::FRandRange(-180.f, 180.f);
 	SetActorRotation(NewForwardDirection);
-	Direction = GetActorForwardVector();
 }
 
+void ARBot::Shoot_Implementation()
+{
+	//Set Spawn Collision Handling Override
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ActorSpawnParams.Instigator = this;
+
+	ARProjectileBase* Proj = GetWorld()->SpawnActor<ARProjectileBase>(BotProjectile, (GetActorLocation() + (GetActorForwardVector()*100)), GetActorRotation(), ActorSpawnParams);
+
+	GetWorldTimerManager().SetTimer(timerHandle, this, &ARBot::Shoot, timeBetweenShots, false);
+}
 
 // Called every frame
 void ARBot::Tick(float DeltaTime)

@@ -4,6 +4,7 @@
 #include "RBot.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/FloatingPawnMovement.h"
+#include "RProjectileExplosive.h"
 
 // Sets default values
 ARBot::ARBot()
@@ -29,6 +30,8 @@ void ARBot::BeginPlay()
 {
 	Super::BeginPlay();
 
+	GetWorld()->GetTimerManager().SetTimer(timerHandle, this, &ARBot::ShootTimer, 0.5f);
+	UE_LOG(LogTemp, Warning, TEXT("Spawning"));
 }
 
 void ARBot::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
@@ -38,6 +41,17 @@ void ARBot::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimit
 	Direction = GetActorForwardVector();
 }
 
+void ARBot::ShootTimer()
+{
+	FVector Location = GetActorLocation();
+	FRotator Rotation(0.0f, 0.0f, 0.0f);
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	UE_LOG(LogTemp, Warning, TEXT("Spawn in loop"));
+	ARProjectileExplosive* Proj = GetWorld()->SpawnActor<ARProjectileExplosive>(Location, Rotation, SpawnInfo);
+	GetWorld()->GetTimerManager().SetTimer(timerHandle, this, &ARBot::ShootTimer, 0.5f);
+}
 
 // Called every frame
 void ARBot::Tick(float DeltaTime)

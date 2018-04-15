@@ -26,6 +26,12 @@ ARProjectileBase::ARProjectileBase()
 	ProjectileMovement->UpdatedComponent = GetRootComponent();
 	bReplicates = true;
 
+	static ConstructorHelpers::FObjectFinder<USoundCue> bounceCueLoader(TEXT("'/Game/Sounds/UI_Sounds/TEMP_BOUNCE_CUE.TEMP_BOUNCE_CUE'"));
+	BounceSound = bounceCueLoader.Object;
+
+	static ConstructorHelpers::FObjectFinder<USoundCue> explosionCueLoader(TEXT("'/Game/Sounds/Weapon_Sounds/Rocket/Rocket_Explode_Cue.Rocket_Explode_Cue'"));
+	ExplosionSound = explosionCueLoader.Object;
+
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
 	SetRemoteRoleForBackwardsCompat(ROLE_SimulatedProxy);
@@ -55,7 +61,24 @@ void ARProjectileBase::OnImpact(const FHitResult & HitResult)
 void ARProjectileBase::OnBounce(const FHitResult& HitResult, const FVector& ImpactVelocity)
 {
 	if (Role == ROLE_Authority)
-		HandleImpact(HitResult);	
+	{
+		HandleImpact(HitResult);
+		PlayBounceSound();
+	}
+}
+
+void ARProjectileBase::PlayBounceSound_Implementation()
+{
+	if (BounceSound && ProjectileMovement->Velocity.Z > AudibleBounceSpeed)
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), BounceSound, GetActorLocation());
+}
+
+void ARProjectileBase::PlayExplosionSound_Implementation()
+{
+	if (ExplosionSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ExplosionSound, GetActorLocation());
+	}
 }
 
 void ARProjectileBase::Destroyed()

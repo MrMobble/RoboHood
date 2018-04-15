@@ -37,6 +37,9 @@ public:
 
 public:
 
+	UPROPERTY(EditDefaultsOnly, Category = Animation)
+	UAnimMontage* DeathAnim;
+
 	//Apply Damage To The Players Health
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
 
@@ -48,7 +51,11 @@ public:
 
 	void SetRagDoll();
 
+	void StopAnimation();
+
 	void ReplicateHit(class AController* Killer, class AActor* DamageCauser, bool bKilled);
+
+	virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
 
 	//Replicate where this pawn was last hit and damaged
 	UPROPERTY(Transient, ReplicatedUsing = OnRep_LastTakeHitInfo)
@@ -80,6 +87,10 @@ public:
 	//Identifies if pawn is in its dying state
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Health)
 	uint32 bIsDying : 1;
+
+	//Player Health Replicated
+	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
+	bool bIsDead;
 
 	//Identifies if pawn is in its dying state
 	UPROPERTY(EditDefaultsOnly, Category = Health)

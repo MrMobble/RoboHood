@@ -41,6 +41,20 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes", Meta = (BlueprintProtected = "true"))
 	float ProjectileRadius;
 
+	USoundCue* ExplosionSound;
+	USoundCue* BounceSound;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayBounceSound();
+	void PlayBounceSound_Implementation();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayExplosionSound();
+	void PlayExplosionSound_Implementation();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile Attributes")
+	float AudibleBounceSpeed;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // BProjectile Components
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

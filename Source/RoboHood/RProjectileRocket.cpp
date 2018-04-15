@@ -17,6 +17,7 @@ void ARProjectileRocket::HandleImpact(const FHitResult& Impact)
 
 	FTransform const SpawnTransform(Impact.ImpactNormal.Rotation(), Impact.ImpactPoint + Impact.ImpactNormal * 10.0f, ParticleScale);
 	SpawnParticle(SpawnTransform);
+	PlayExplosionSound();
 
 	Destroy();
 }

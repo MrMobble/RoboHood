@@ -32,6 +32,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
 	TSubclassOf<class ARProjectileBase> ProjectileBP;
 
+	//ShootingSound.
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
+	USoundCue* ShootSound;
+
+	//ShootingSound.
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
+	USoundCue* ReloadSound;
+
 	//FireRate.
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
 	float TimeBetweenShots;
@@ -73,6 +81,12 @@ protected:
 	void OnRep_MyPawn();
 
 private:
+
+	UFUNCTION(NetMultiCast, Reliable)
+	void PlayShootSound();
+	void PlayShootSound_Implementation();
+
+	void PlayReloadSound(USoundCue* Sound);
 
 	//Multiplayer Framework For Replicating Variables
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;

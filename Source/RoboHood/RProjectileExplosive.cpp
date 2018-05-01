@@ -22,6 +22,6 @@ void ARProjectileExplosive::HandleDeath()
 
 	FTransform const SpawnTransform(GetActorRotation(), GetActorLocation(), ParticleScale);
 	SpawnParticle(SpawnTransform);
-	
+	PlayExplosionSound();
 }
 

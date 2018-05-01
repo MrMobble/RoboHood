@@ -13,6 +13,4 @@ class ROBOHOOD_API ARProjectileRocket : public ARProjectileBase
 public:	
 
 	void HandleImpact(const FHitResult& Impact);
-
-
 };

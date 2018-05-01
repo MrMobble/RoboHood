@@ -9,6 +9,7 @@
 #include "RProjectileBase.h"
 
 //Other Includes
+#include "Sound/SoundCue.h"
 #include "Components/SceneComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -182,6 +183,7 @@ void ARWeapon::HandleFiring()
 			if (CurrentAmmo > 0)
 			{
 				SpawnMuzzleFlash();
+				PlayShootSound();
 			}
 		}
 
@@ -415,6 +417,7 @@ void ARWeapon::StartRecharge()
 	{
 		bIsReloading = true;
 		DetermineWeaponState();
+		PlayReloadSound(ReloadSound);
 
 		GetWorldTimerManager().SetTimer(TimerHandle_ReloadWeapon, this, &ARWeapon::RechargeWeapon, ReloadWeaponTime, false);
 	}
@@ -455,11 +458,28 @@ void ARWeapon::SpawnMuzzleFlash()
 	}
 }
 
+void ARWeapon::PlayShootSound_Implementation()
+{
+	if (ShootSound && MyPawn)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ShootSound, GetMuzzleLocation());
+	}
+}
+
+void ARWeapon::PlayReloadSound(USoundCue* Sound)
+{
+	if (Sound)
+	{
+		UGameplayStatics::PlaySound2D(GetWorld(), Sound);
+	}
+}
+
 void ARWeapon::OnRep_BurstCounter()
 {
 	if (BurstCounter > 0)
 	{
 		SpawnMuzzleFlash();
+		PlayShootSound();
 	}
 }
 

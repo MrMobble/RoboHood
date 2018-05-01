@@ -110,6 +110,8 @@ void ARCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ARCharacter, AimPitch);
 
 	DOREPLIFETIME(ARCharacter, LastTakeHitInfo);
+
+	DOREPLIFETIME(ARCharacter, bIsDead);
 }
 
 //Initialise The Weapon
@@ -188,6 +190,7 @@ void ARCharacter::OnDeath(class AController* Killer, class AActor* DamageCauser)
 
 	bReplicateMovement = false;
 	bIsDying = true;
+	bIsDead = true;
 
 	if (Role == ROLE_Authority)
 	{
@@ -205,11 +208,19 @@ void ARCharacter::OnDeath(class AController* Killer, class AActor* DamageCauser)
 	}
 	SetActorEnableCollision(true);
 
-	SetRagDoll();
+	//SetRagDoll();
 
-	// disable collisions on capsule
+	SetLifeSpan(6.0f);
+
+	//Disable collisions on capsule
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+}
+
+void ARCharacter::StopAnimation()
+{
+		GetMesh()->bNoSkeletonUpdate = true;
+		SetLifeSpan(6.0f);
 }
 
 //Apply ragdoll physics.
@@ -251,6 +262,7 @@ void ARCharacter::SetRagDoll()
 		SetLifeSpan(10.0f);
 	}
 }
+
 
 //Replicates the hit that killed the player.
 void ARCharacter::ReplicateHit(class AController* Killer, class AActor* DamageCauser, bool bKilled)
@@ -555,4 +567,15 @@ void ARCharacter::SetRunning(bool bNewValue)
 void ARCharacter::ServerSetSprint_Implementation(bool bNewValue)
 {
 	SetRunning(bNewValue);
+}
+
+float ARCharacter::PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
+{
+	USkeletalMeshComponent* UseMesh = GetMesh();
+	if (AnimMontage && UseMesh && UseMesh->AnimScriptInstance)
+	{
+		return UseMesh->AnimScriptInstance->Montage_Play(AnimMontage, InPlayRate);
+	}
+
+	return 0.0f;
 }

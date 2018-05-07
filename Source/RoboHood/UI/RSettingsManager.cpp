@@ -84,6 +84,23 @@ float URSettingsManager::GetAudio(FName ConVar, FString Section)
 	return 0;
 }
 
+void URSettingsManager::ApplyDefaultSettings()
+{
+	SetConfigValue(FName("r.setres"), "1280x720w", "Settings");
+	SetConfigValue(FName("sg.ResolutionQuality"), "100", "Settings");
+	SetConfigValue(FName("sg.ViewDistanceQuality"), "1", "Settings");
+	SetConfigValue(FName("sg.AntiAliasingQuality"), "1", "Settings");
+	SetConfigValue(FName("sg.ShadowQuality"), "1", "Settings");
+	SetConfigValue(FName("sg.TextureQuality"), "1", "Settings");
+	SetConfigValue(FName("sg.EffectsQuality"), "1", "Settings");
+	SetConfigValue(FName("sg.PostProcessQuality"), "1", "Settings");
+	SetConfigValue(FName("t.MaxFPS"), "60", "Settings");
+
+	SetConfigValue(FName("master"), "1", "Audio");
+	SetConfigValue(FName("game"), "1", "Audio");
+	SetConfigValue(FName("music"), "1", "Audio");
+}
+
 FConfigSection* URSettingsManager::GetSection(FString Section)
 {
 	return GConfig->GetSectionPrivate(Section.GetCharArray().GetData(), false, true, IniFilename);

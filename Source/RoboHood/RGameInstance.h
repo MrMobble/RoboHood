@@ -78,6 +78,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetAudioSetting(FName ConVar, FString Section);
 
+	UFUNCTION(BlueprintCallable)
+	void ApplyDefaultSettings();
+
 
 
 };

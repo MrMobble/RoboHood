@@ -60,6 +60,8 @@ public: //Main Functions
 
 	static float GetAudio(FName ConVar, FString Section);
 
+	static void ApplyDefaultSettings();
+
 public: //Helper Functions
 
 	static FConfigSection* GetSection(FString Section);

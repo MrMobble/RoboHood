@@ -44,6 +44,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
 	float TimeBetweenShots;
 
+	//Shoot Animation.
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
+	UAnimationAsset* ShootAnimation;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
+	FRotator MuzzleRotation;
+
 public:
 
 	//Called From Player Sets MyPawn
@@ -65,6 +72,8 @@ public:
 
 	//Attaches Weapon To Player Socket
 	void DeAttachMeshToPawn();
+
+	void PlayWeaponAnimation(UAnimationAsset* Animation);
 
 protected:
 
@@ -105,6 +114,23 @@ private:
 
 	//Get LastShot Time To Calculate TimeBetweenShots
 	float LastFireTime;
+
+public:
+
+	//Weapon Material T8-03 Specific
+	UMaterialInstanceDynamic* DynamicMat;
+
+	//This is T8-03
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Material")
+	bool bUseDynamicMat;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Material")
+	float E_BaseValue;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Material")
+	float E_Increase;
+
+	void IncreaseWeaponEmissive(bool bIncrease);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Weapon Shoot Functions And Variables

@@ -39,6 +39,7 @@ void ARWeapon::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	CurrentAmmo = AmmoPerClip;
+	if (bUseDynamicMat) DynamicMat = Mesh->CreateAndSetMaterialInstanceDynamic(0);
 }
 
 void ARWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -175,35 +176,33 @@ void ARWeapon::ServerStopFire_Implementation()
 
 void ARWeapon::HandleFiring()
 {
-	if (CanFire())
+	if (CanFire() && CurrentAmmo > 0)
 	{
 
 		if (GetNetMode() != NM_DedicatedServer)
 		{
-			if (CurrentAmmo > 0)
-			{
-				SpawnMuzzleFlash();
-				PlayShootSound();
-			}
+			SpawnMuzzleFlash();
+			PlayShootSound();
 		}
 
 		if (MyPawn && MyPawn->IsLocallyControlled())
 		{
-			if (CurrentAmmo > 0)
-			{
-				FireWeapon();
+			FireWeapon();
 
-				UseAmmo();
+			UseAmmo();
 
-				BurstCounter++;
-			}
-			else
-			{
-				if (bCanReload)
-				{
-					StartRecharge();
-				}
-			}
+			BurstCounter++;
+		}
+	}
+	else if (bCanReload)
+	{
+		StartRecharge();
+	}
+	else if (MyPawn && MyPawn->IsLocallyControlled())
+	{
+		if (BurstCounter > 0)
+		{
+			OnBurstFinished();
 		}
 	}
 
@@ -252,7 +251,7 @@ void ARWeapon::FireWeapon()
 	const FVector EndTrace = StartTrace + ShootDir * ProjectileAdjustRange;
 	FHitResult Impact = WeaponTrace(StartTrace, EndTrace);
 
-	// and adjust directions to hit that actor
+	//And adjust directions to hit that actor
 	if (Impact.bBlockingHit)
 	{
 		const FVector AdjustedDir = (Impact.ImpactPoint - Origin).GetSafeNormal();
@@ -261,14 +260,13 @@ void ARWeapon::FireWeapon()
 		const float DirectionDot = FVector::DotProduct(AdjustedDir, ShootDir);
 		if (DirectionDot < 0.0f)
 		{
-			// shooting backwards = weapon is penetrating
+			//Shooting backwards = weapon is penetrating
 			bWeaponPenetration = true;
 		}
 		else if (DirectionDot < 0.5f)
 		{
-			// check for weapon penetration if angle difference is big enough
-			// raycast along weapon mesh to check if there's blocking hit
-
+			//Check for weapon penetration if angle difference is big enough
+			//Raycast along weapon mesh to check if there's blocking hit
 			FVector MuzzleStartTrace = Origin - GetMuzzleDirection() * 150.0f;
 			FVector MuzzleEndTrace = Origin;
 			FHitResult MuzzleImpact = WeaponTrace(MuzzleStartTrace, MuzzleEndTrace);
@@ -285,13 +283,10 @@ void ARWeapon::FireWeapon()
 		}
 		else
 		{
-			// adjust direction to hit
+			//Adjust direction to hit
 			ShootDir = AdjustedDir;
 		}
 	}
-
-	//if (MuzzleFlash_Particle) SpawnMuzzleFlash();
-	//BurstCounter++;
 	
 	SpawnProjectile(Origin, ShootDir);	
 }
@@ -322,9 +317,6 @@ FHitResult ARWeapon::WeaponTrace(const FVector& TraceFrom, const FVector& TraceT
 	FHitResult Hit(ForceInit);
 	GetWorld()->LineTraceSingleByChannel(Hit, TraceFrom, TraceTo, ECC_WorldStatic, TraceParams);
 
-	//DrawDebugLine(GetWorld(), TraceFrom, Hit.ImpactPoint, FColor(255, 0, 0), false, 5, 0, 4);
-	//DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 48, 12, FColor(255, 0, 0), false, 5, 0, 4);
-
 	return Hit;
 }
 
@@ -343,6 +335,7 @@ void ARWeapon::OnBurstStarted()
 void ARWeapon::OnBurstFinished()
 {
 	BurstCounter = 0;
+	if (bUseDynamicMat) IncreaseWeaponEmissive(false);
 
 	GetWorldTimerManager().ClearTimer(HandleFiringTimerHandle);
 	bRefiring = false;
@@ -407,8 +400,6 @@ EWeaponState ARWeapon::GetCurrentState() const
 void ARWeapon::UseAmmo()
 {
 	CurrentAmmo--;
-
-	//UE_LOG(LogTemp, Warning, TEXT("CurrentAmmo: %d"), CurrentAmmo);
 }
 
 void ARWeapon::StartRecharge()
@@ -449,12 +440,24 @@ void ARWeapon::SpawnMuzzleFlash()
 		return;
 	}
 
-	//This is the position on the muzzle
-	FRotator Rotation = FRotator(90, 90, 0);
-
 	if (MuzzleFlash_Particle)
 	{
-		UGameplayStatics::SpawnEmitterAttached(MuzzleFlash_Particle, Mesh, MuzzleBone_Name, FVector::ZeroVector, Rotation, EAttachLocation::SnapToTarget);
+		UGameplayStatics::SpawnEmitterAttached(MuzzleFlash_Particle, Mesh, MuzzleBone_Name, FVector::ZeroVector, MuzzleRotation, EAttachLocation::SnapToTarget);
+	}
+
+	//T8-03 Specific
+	if (ShootAnimation) PlayWeaponAnimation(ShootAnimation);
+	if (bUseDynamicMat) IncreaseWeaponEmissive(true);
+}
+
+void ARWeapon::PlayWeaponAnimation(UAnimationAsset* Animation)
+{
+	if (Mesh)
+	{
+		if (Animation)
+		{
+			Mesh->PlayAnimation(Animation, false);
+		}
 	}
 }
 
@@ -480,6 +483,11 @@ void ARWeapon::OnRep_BurstCounter()
 	{
 		SpawnMuzzleFlash();
 		PlayShootSound();
+	}
+
+	if (!(BurstCounter > 0) && bUseDynamicMat)
+	{
+		IncreaseWeaponEmissive(true);
 	}
 }
 
@@ -532,4 +540,15 @@ FVector ARWeapon::GetMuzzleLocation()
 FVector ARWeapon::GetMuzzleDirection()
 {
 	return Mesh->GetSocketRotation(MuzzleBone_Name).Vector();
+}
+
+void ARWeapon::IncreaseWeaponEmissive(bool bIncrease)
+{
+	if (bUseDynamicMat)
+	{
+		float Value = E_BaseValue + E_Increase * (BurstCounter + (bIncrease ? 1 : 0));
+		DynamicMat->SetScalarParameterValue(FName("Intensity"), Value);
+
+		//UE_LOG(LogTemp, Warning, TEXT("Num: %d"), BurstCounter + (bIncrease ? 1 : 0));
+	}
 }

@@ -579,3 +579,14 @@ float ARCharacter::PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlay
 
 	return 0.0f;
 }
+
+bool ARCharacter::SetNewMaterial(int MatIndex)
+{
+	if (Swap_Materials[MatIndex])
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%d"), MatIndex);
+		GetMesh()->SetMaterial(1, Swap_Materials[MatIndex]);
+		return true;
+	}
+	return false;
+}

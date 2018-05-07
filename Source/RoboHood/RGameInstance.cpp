@@ -62,10 +62,17 @@ UUserWidget* URGameInstance::CreateGameWidget(APlayerController* PlayerControlle
 
 TArray<FString> URGameInstance::GetCurrentSettings(FString Section)
 {
+	if (URSettingsManager::GetSettings(Section).Num() == 0) URSettingsManager::ApplyDefaultSettings();
+
 	return URSettingsManager::GetSettings(Section);
 }
 
 float URGameInstance::GetAudioSetting(FName ConVar, FString Section)
 {
 	return URSettingsManager::GetAudio(ConVar, Section);
+}
+
+void URGameInstance::ApplyDefaultSettings()
+{
+	URSettingsManager::ApplyDefaultSettings();
 }

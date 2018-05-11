@@ -8,7 +8,8 @@ public class RoboHoodTarget : TargetRules
 	public RoboHoodTarget(TargetInfo Target)
 	{
 		Type = TargetType.Game;
-	}
+
+    }
 
 	//
 	// TargetRules interface.

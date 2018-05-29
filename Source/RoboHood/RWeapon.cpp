@@ -404,6 +404,11 @@ void ARWeapon::UseAmmo()
 
 void ARWeapon::StartRecharge()
 {
+	if (Role < ROLE_Authority)
+	{
+		ServerStartRecharge();
+	}
+
 	if (bCanReload && CurrentAmmo != AmmoPerClip && !bIsReloading)
 	{
 		bIsReloading = true;
@@ -412,6 +417,11 @@ void ARWeapon::StartRecharge()
 
 		GetWorldTimerManager().SetTimer(TimerHandle_ReloadWeapon, this, &ARWeapon::RechargeWeapon, ReloadWeaponTime, false);
 	}
+}
+
+void ARWeapon::ServerStartRecharge_Implementation()
+{
+	StartRecharge();
 }
 
 void ARWeapon::StopRecharge()

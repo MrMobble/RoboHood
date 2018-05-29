@@ -160,12 +160,16 @@ float ARCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEve
 			{
 				Die(EventInstigator, DamageCauser);
 			}
+			else
+			{
+				DieEnvironment(nullptr, nullptr);
+			}
 		}
 	}
 	return ActualDamage;
 }
 
-//Tells gamemode that you died.
+//Tells game mode that you died.
 bool ARCharacter::Die(class AController* Killer, class AActor* DamageCauser)
 {
 	if (!CanDie()) return false;
@@ -174,11 +178,28 @@ bool ARCharacter::Die(class AController* Killer, class AActor* DamageCauser)
 	Health = FMath::Min(0.0f, Health);
 	AController* const KilledPlayer = (Controller != NULL) ? Controller : Cast<AController>(GetOwner());
 
-	//Tell the gamemode that someone died (gamemode handles adding score and respawning player).
+	//Tell the game mode that someone died (game mode handles adding score and re spawning player).
 	GetWorld()->GetAuthGameMode<ARGameMode>()->Killed(Killer, KilledPlayer, this);
 
 	GetCharacterMovement()->ForceReplicationUpdate();
 	
+	OnDeath(Killer, DamageCauser);
+	return true;
+}
+
+//Tells game mode that you died.
+bool ARCharacter::DieEnvironment(class AController* Killer, class AActor* DamageCauser)
+{
+	if (!CanDie()) return false;
+
+	Health = FMath::Min(0.0f, Health);
+	AController* const KilledPlayer = (Controller != NULL) ? Controller : Cast<AController>(GetOwner());
+
+	//Tell the game mode that someone died (game mode handles adding score and re spawning player).
+	GetWorld()->GetAuthGameMode<ARGameMode>()->Killed(Killer, KilledPlayer, this);
+
+	GetCharacterMovement()->ForceReplicationUpdate();
+
 	OnDeath(Killer, DamageCauser);
 	return true;
 }
@@ -213,7 +234,7 @@ void ARCharacter::OnDeath(class AController* Killer, class AActor* DamageCauser)
 	SetLifeSpan(6.0f);
 
 	//Disable collisions on capsule
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 }
 
@@ -223,7 +244,7 @@ void ARCharacter::StopAnimation()
 		SetLifeSpan(6.0f);
 }
 
-//Apply ragdoll physics.
+//Apply rag doll physics.
 void ARCharacter::SetRagDoll()
 {
 	bool bInRagdoll = false;
@@ -272,6 +293,12 @@ void ARCharacter::ReplicateHit(class AController* Killer, class AActor* DamageCa
 	LastTakeHitInfo.bKilled = bKilled;
 }
 
+void ARCharacter::SetEnvironmentalPhysics()
+{
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetCapsuleComponent()->SetSimulatePhysics(true);
+}
+
 //On Replication function
 void ARCharacter::OnRep_LastTakeHitInfo()
 {
@@ -279,6 +306,11 @@ void ARCharacter::OnRep_LastTakeHitInfo()
 	{
 		OnDeath(LastTakeHitInfo.Killer, LastTakeHitInfo.DamageCauser);
 	}
+}
+
+void ARCharacter::TurnOff()
+{
+	Super::TurnOff();
 }
 
 //Check if player can die
@@ -298,44 +330,60 @@ bool ARCharacter::CanDie()
 //Camera Left/Right
 void ARCharacter::TurnAtRate(float Rate)
 {
-	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+	ARPlayerController* MyPC = Cast<ARPlayerController>(Controller);
+	if (MyPC && MyPC->IsGameInputAllowed())
+	{
+		AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+	}
 }
 
 //Camera Up/Down
 void ARCharacter::LookUpAtRate(float Rate)
 {
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+	ARPlayerController* MyPC = Cast<ARPlayerController>(Controller);
+	if (MyPC && MyPC->IsGameInputAllowed())
+	{
+		AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+	}
 }
 
 //Move Forward/Back Function
 void ARCharacter::MoveForward(float Value)
 {
-	fDirection = Value;
-
-	if ((Controller != NULL) && (Value != 0.0f))
+	ARPlayerController* MyPC = Cast<ARPlayerController>(Controller);
+	if (MyPC && MyPC->IsGameInputAllowed())
 	{
-		if (Value < 0) SetRunning(false);
+		fDirection = Value;
 
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		if ((Controller != NULL) && (Value != 0.0f))
+		{
+			if (Value < 0) SetRunning(false);
 
-		AddMovementInput(Direction, Value);
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
+			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+
+			AddMovementInput(Direction, Value);
+		}
 	}
 }
 
 //Move Left/Right Function
 void ARCharacter::MoveRight(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f))
+	ARPlayerController* MyPC = Cast<ARPlayerController>(Controller);
+	if (MyPC && MyPC->IsGameInputAllowed())
 	{
-		if (bWantsToRun) SetRunning(false);
+		if ((Controller != NULL) && (Value != 0.0f))
+		{
+			if (bWantsToRun) SetRunning(false);
 
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
+			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-		AddMovementInput(Direction, Value);
+			AddMovementInput(Direction, Value);
+		}
 	}
 }
 
@@ -461,9 +509,19 @@ void ARCharacter::DestroyInventory()
 // ShootWeapon Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ARCharacter::OnStartFire() { StartWeaponFire(); }
+void ARCharacter::OnStartFire() 
+{
+	ARPlayerController* MyPC = Cast<ARPlayerController>(Controller);
+	if (MyPC && MyPC->IsGameInputAllowed())
+	{
+		StartWeaponFire();
+	}
+}
 
-void ARCharacter::OnStopFire() { StopWeaponFire(); }
+void ARCharacter::OnStopFire() 
+{ 
+	StopWeaponFire();	
+}
 
 void ARCharacter::StartWeaponFire()
 {
@@ -510,6 +568,7 @@ void ARCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//UE_LOG(LogTemp, Warning, TEXT("URL: %d"), GetWorld()->URL.Port);
 
 	SetPitch();
 

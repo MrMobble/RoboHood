@@ -27,6 +27,4 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Teleporter Properties")
 	ARTeleporter* Target;
 
-	
-	
 };

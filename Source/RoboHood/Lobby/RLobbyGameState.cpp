@@ -10,6 +10,7 @@
 //Class Includes
 #include "RGameInstance.h"
 #include "RLobbyInterface.h"
+#include "Lobby/RLobbyPlayerController.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Server Functions
@@ -23,6 +24,20 @@ void ARLobbyGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & 
 	DOREPLIFETIME(ARLobbyGameState, IntCountDown);
 }
 
+//Not in use
+void ARLobbyGameState::UpdatePlayerList()
+{
+	for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+	{
+		ARLobbyPlayerController* PlayerController = Cast<ARLobbyPlayerController>((*It));
+		if (PlayerController)
+		{
+			PlayerController->UpdateLobbyList();
+		}
+	}
+}
+
+//Not in use
 void ARLobbyGameState::MultiUpdatePlayerList_Implementation()
 {
 	URGameInstance* GameInstance = Cast<URGameInstance>(GetWorld()->GetGameInstance());
@@ -31,7 +46,7 @@ void ARLobbyGameState::MultiUpdatePlayerList_Implementation()
 		URLobbyInterface* Lobby = Cast<URLobbyInterface>(GameInstance->GetLobbyWidget());
 		if (Lobby)
 		{
-			Lobby->UpdateList();
+			Lobby->UpdatePlayerList();
 		}
 	}
 }
@@ -63,26 +78,20 @@ void ARLobbyGameState::StartCountDown()
 
 void ARLobbyGameState::CountDown()
 {
-	if (IntCountDown <= 0)
+	//Clears The CountDown Handle So It NoLonger Ticks
+	GetWorldTimerManager().ClearTimer(CountDownHandle);
+
+	//Displays LoadingScreen For All Players + Server
+	MultiDisplayLoadingScreen();
+
+	URGameInstance* GameInstance = Cast<URGameInstance>(GetWorld()->GetGameInstance());
+	if (GameInstance)
 	{
-		//Clears The CountDown Handle So It NoLonger Ticks
-		GetWorldTimerManager().ClearTimer(CountDownHandle);
-
-		//Displays LoadingScreen For All Players + Server
-		MultiDisplayLoadingScreen();
-
-		URGameInstance* GameInstance = Cast<URGameInstance>(GetWorld()->GetGameInstance());
-		if (GameInstance)
+		URLobbyInterface* Lobby = Cast<URLobbyInterface>(GameInstance->GetLobbyWidget());
+		if (Lobby)
 		{
-			URLobbyInterface* Lobby = Cast<URLobbyInterface>(GameInstance->GetLobbyWidget());
-			if (Lobby)
-			{
-				//Calls ServerTravel Event In The LobbyWidget
-				Lobby->ServerTravel();
-			}
+			//Calls ServerTravel Event In The LobbyWidget
+			Lobby->ServerTravel();
 		}
 	}
-
-	//Simple
-	IntCountDown--;
 }

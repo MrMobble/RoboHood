@@ -17,7 +17,7 @@ class ROBOHOOD_API URLobbyInterface : public UUserWidget
 public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "UpdateFunctions")
-	void UpdateList();
+	void UpdatePlayerList();
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "LobbyFunction")
 	void ServerTravel();

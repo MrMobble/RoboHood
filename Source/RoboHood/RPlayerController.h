@@ -17,20 +17,22 @@ public:
 
 	ARPlayerController();
 
-	//TimerHandle For The Respawn
+	virtual void TickActor(float DeltaTime, enum ELevelTick TickType, FActorTickFunction& ThisTickFunction) override;
+
+	//TimerHandle For The Re spawn
 	FTimerHandle Timehandle_Respawn;
 
-	//Pawn To Respawn
+	//Pawn To Re spawn
 	TSubclassOf<APawn> ReSpawnCharacter;
 	int32 ReSpawnID;
 
-	//Player Respawn Functions
+	//Player Re spawn Functions
 	void OnKilled();
 
-	//Respawns The Player
+	//Re spawns The Player
 	void RespawnPlayer();
 
-	//Client Called When Joinging Game
+	//Client Called When Joining Game
 	UFUNCTION(Reliable, Client)
 	void ClientPostLogin();
 	void ClientPostLogin_Implementation();
@@ -43,9 +45,26 @@ public:
 
 	virtual void PawnPendingDestroy(APawn* P) override;
 
-	UFUNCTION(Reliable, Client)
-	void ClientSetSpectatorCamera(FVector CameraLocation, FRotator CameraRotation);
+	void SetSpectatorCamera();
 
-	bool FindDeathCameraSpot(FVector& CameraLocation, FRotator& CameraRotation);
+	virtual void ClientGameEnded_Implementation(class AActor* EndGameFocus, bool bIsWinner);
+
+	UFUNCTION(Reliable, Client)
+	void ClientSetSpectatorCamera(FVector _CameraLocation, FRotator _CameraRotation);
+
+	bool FindDeathCameraSpot(FVector& _CameraLocation, FRotator& _CameraRotation);
+
+	bool bGameEndedFrame;
+
+	bool bAllowGameActions;
+
+	bool IsGameInputAllowed() const;
+
+protected:
+
+	FVector CameraLocation;
+	FRotator CameraRotation;
+
+	FTimerHandle Timehandle_Camera;
 
 };

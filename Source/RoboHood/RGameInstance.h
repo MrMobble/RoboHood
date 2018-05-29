@@ -81,6 +81,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ApplyDefaultSettings();
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Travel")
+	void EndServerTravel(int32 MapIndex);
+
 
 
 };

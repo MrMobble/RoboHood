@@ -24,6 +24,8 @@ ARCollectableSpawner::ARCollectableSpawner()
 	SpawnerMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SpawnerMesh->SetupAttachment(RootComponent);
 
+	SpawnLocation = CreateDefaultSubobject<USceneComponent>(TEXT("SpawnLocation"));
+	SpawnLocation->SetupAttachment(RootComponent);
 
 	MeshEffect = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshEffect"));
 	MeshEffect->SetCollisionObjectType(ECC_WorldStatic);
@@ -85,7 +87,7 @@ void ARCollectableSpawner::SpawnCollectable()
 	if (PickupMesh != NULL)
 	{
 		AActor* Collectable = GetWorld()->SpawnActor<AActor>(PickupMesh, SpawnInfo);
-		Collectable->SetActorLocation(GetActorLocation());
+		Collectable->SetActorLocation(SpawnLocation->GetComponentLocation());
 		CollectableReference = Collectable;
 
 		bIsActive = true;

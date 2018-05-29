@@ -21,4 +21,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool CheckAuthority();
+
+	void UpdateLobbyList();
 };

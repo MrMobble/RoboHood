@@ -6,6 +6,7 @@
 //Class Includes
 #include "RCharacter.h"
 #include "RPlayerController.h"
+#include "Components/SceneCaptureComponent2D.h"
 
 // Sets default values
 ARTeleporter::ARTeleporter()

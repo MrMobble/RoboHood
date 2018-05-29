@@ -22,6 +22,8 @@ public:
 	//Framework Replicate Crap
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const;
 
+	void UpdatePlayerList();
+
 	//Multicast To Update The PlayerList
 	UFUNCTION(Reliable, NetMulticast)
 	void MultiUpdatePlayerList();

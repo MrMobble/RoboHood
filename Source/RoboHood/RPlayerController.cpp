@@ -22,7 +22,19 @@
 
 ARPlayerController::ARPlayerController()
 {
+	bAllowGameActions = true;
+}
 
+void ARPlayerController::TickActor(float DeltaTime, enum ELevelTick TickType, FActorTickFunction& ThisTickFunction)
+{
+	Super::TickActor(DeltaTime, TickType, ThisTickFunction);
+
+	// Is this the first frame after the game has ended
+	if (bGameEndedFrame)
+	{
+		bGameEndedFrame = false;
+
+	}
 }
 
 void ARPlayerController::OnKilled()
@@ -67,22 +79,54 @@ void ARPlayerController::RespawnPlayer()
 void ARPlayerController::PawnPendingDestroy(APawn* P)
 {
 	FVector LastDeathLocation = P->GetActorLocation();
-	FVector CameraLocation = LastDeathLocation + FVector(0, 0, 300.0f);
-	FRotator CameraRotation(-90.0f, 0.0f, 0.0f);
+	CameraLocation = LastDeathLocation + FVector(0, 0, 300.0f);
+	CameraRotation = FRotator(-90.0f, 0.0f, 0.0f);
+
+	//Returns CamLocation And Rotation.
 	FindDeathCameraSpot(CameraLocation, CameraRotation);
 
 	Super::PawnPendingDestroy(P);
 
+	//This delay is to fix the death camera, for some reason the client needs this :/
+	GetWorldTimerManager().SetTimer(Timehandle_Camera, this, &ARPlayerController::SetSpectatorCamera, 0.1f);
+
+}
+
+void ARPlayerController::SetSpectatorCamera()
+{
 	ClientSetSpectatorCamera(CameraLocation, CameraRotation);
 }
 
-void ARPlayerController::ClientSetSpectatorCamera_Implementation(FVector CameraLocation, FRotator CameraRotation)
+void ARPlayerController::ClientGameEnded_Implementation(class AActor* EndGameFocus, bool bIsWinner)
 {
-	SetInitialLocationAndRotation(CameraLocation, CameraRotation);
+	Super::ClientGameEnded_Implementation(EndGameFocus, bIsWinner);
+
+	bAllowGameActions = false;
+
+	// Disable controls now the game has ended
+	SetIgnoreMoveInput(true);
+
+	// Make sure that we still have valid view target
+	SetViewTarget(GetPawn());
+
+	// ONLY PUT CODE HERE WHICH YOU DON'T WANT TO BE DONE DUE TO HOST LOSS
+	ARHUD* GameHUD = Cast<ARHUD>(GetHUD());
+	if (GameHUD)
+	{
+		GameHUD->ShowEndScreen(bIsWinner);
+	}
+
+	// Flag that the game has just ended (if it's ended due to host loss we want to wait for ClientReturnToMainMenu_Implementation first, incase we don't want to process)
+	bGameEndedFrame = true;
+}
+
+void ARPlayerController::ClientSetSpectatorCamera_Implementation(FVector _CameraLocation, FRotator _CameraRotation)
+{
+	SetInitialLocationAndRotation(_CameraLocation, _CameraRotation);
 	SetViewTarget(this);
 }
 
-bool ARPlayerController::FindDeathCameraSpot(FVector& CameraLocation, FRotator& CameraRotation)
+bool ARPlayerController::FindDeathCameraSpot(FVector& _CameraLocation, FRotator& _CameraRotation)
 {
 	const FVector PawnLocation = GetPawn()->GetActorLocation();
 	FRotator ViewDir = GetControlRotation();
@@ -114,3 +158,7 @@ bool ARPlayerController::FindDeathCameraSpot(FVector& CameraLocation, FRotator& 
 	return false;
 }
 
+bool ARPlayerController::IsGameInputAllowed() const
+{
+	return bAllowGameActions;
+}

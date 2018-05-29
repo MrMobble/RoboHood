@@ -40,3 +40,16 @@ bool ARLobbyPlayerController::CheckAuthority()
 	return true;
 }
 
+void ARLobbyPlayerController::UpdateLobbyList()
+{
+	URGameInstance* GameInstance = Cast<URGameInstance>(GetWorld()->GetGameInstance());
+	if (GameInstance)
+	{
+		URLobbyInterface* Lobby = Cast<URLobbyInterface>(GameInstance->GetLobbyWidget());
+		if (Lobby)
+		{
+			Lobby->UpdatePlayerList();
+		}
+	}
+}
+

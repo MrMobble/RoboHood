@@ -21,8 +21,6 @@ void ARLobbyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UpdateLobbyPlayerList();
-
 }
 
 void ARLobbyPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
@@ -34,13 +32,15 @@ void ARLobbyPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > 
 	DOREPLIFETIME(ARLobbyPlayerState, isServer);
 }
 
+
+//This is not used anymore
 void ARLobbyPlayerState::UpdateLobbyPlayerList()
 {
 	ARLobbyGameState* LGState = Cast<ARLobbyGameState>(GetWorld()->GetGameState());
 	if (LGState)
 	{
 		//Updates The PlayerList When Someone Joins The Lobby
-		LGState->MultiUpdatePlayerList();
+		LGState->UpdatePlayerList();
 	}
 }
 

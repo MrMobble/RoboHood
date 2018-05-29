@@ -265,6 +265,12 @@ public:
 
 	virtual void StartRecharge();
 
+	//Server Function For StartRecharge
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerStartRecharge();
+	void ServerStartRecharge_Implementation();
+	bool ServerStartRecharge_Validate() { return true; }
+
 	void IncreaseAmmo(int32 Ammount);
 
 	//

@@ -5,6 +5,8 @@
 #include "GameFramework/GameMode.h"
 #include "RGameMode.generated.h"
 
+class ARPlayerState;
+
 UCLASS()
 class ROBOHOOD_API ARGameMode : public AGameMode
 {
@@ -28,6 +30,29 @@ public:
 	//PostLegin FUnction
 	virtual void PostLogin(APlayerController* NewPlayer);
 
+	virtual void BeginPlay();
+
 	void Killed(AController* Killer, AController* KilledPlayer, APawn* KilledPawn);
+
+	void DetermineMatchWinner();
+
+	bool IsWinner(ARPlayerState* PlayerState) const;
+
+	UPROPERTY(Transient)
+	ARPlayerState* WinnerPlayerState;
+
+	void DetermineGameState();
+
+	UFUNCTION(Exec)
+	void FinishMatch();
 	
+	void ReturnToLobby();
+
+	FTimerHandle TimerHandle_DefaultTimer;
+
+	virtual void PreInitializeComponents() override;
+
+	void DefaultTimer();
+
+	FTimerHandle TimeHandle_Return;
 };

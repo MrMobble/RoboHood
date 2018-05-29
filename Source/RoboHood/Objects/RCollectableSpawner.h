@@ -32,6 +32,9 @@ public:
 	UStaticMeshComponent* SpawnerMesh;
 
 	UPROPERTY(VisibleDefaultsOnly)
+	USceneComponent* SpawnLocation;
+
+	UPROPERTY(VisibleDefaultsOnly)
 	UStaticMeshComponent* MeshEffect;
 
 	UPROPERTY(VisibleDefaultsOnly)

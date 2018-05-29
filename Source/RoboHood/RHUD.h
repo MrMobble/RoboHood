@@ -31,6 +31,10 @@ public:
 	//This Is An Event You Can Call From C++ In Blueprint
 	UFUNCTION(BlueprintImplementableEvent, Category = "HUDEvents")
 	void RespawnTextRemove();
+
+	//This Is An Event You Can Call From C++ In Blueprint
+	UFUNCTION(BlueprintImplementableEvent, Category = "HUDEvents")
+	void ShowEndScreen(bool bIsWinner);
 	
 	
 	

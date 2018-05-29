@@ -47,6 +47,8 @@ public:
 
 	bool Die(class AController* Killer, class AActor* DamageCauser);
 
+	bool DieEnvironment(class AController* Killer, class AActor* DamageCauser);
+
 	void OnDeath(class AController* Killer, class AActor* DamageCauser);
 
 	void SetRagDoll();
@@ -54,6 +56,8 @@ public:
 	void StopAnimation();
 
 	void ReplicateHit(class AController* Killer, class AActor* DamageCauser, bool bKilled);
+
+	void SetEnvironmentalPhysics();
 
 	virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
 
@@ -63,6 +67,8 @@ public:
 
 	UFUNCTION()
 	void OnRep_LastTakeHitInfo();
+
+	void TurnOff() override;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 

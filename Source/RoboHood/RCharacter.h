@@ -70,6 +70,11 @@ public:
 
 	void TurnOff() override;
 
+	USoundCue* ImpactSound;
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayImpactSound();
+	void PlayImpactSound_Implementation();
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//Base Turn Rate

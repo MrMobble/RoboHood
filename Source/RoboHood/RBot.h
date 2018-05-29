@@ -24,6 +24,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	FRotator NewForwardDirection;
 
+	UPROPERTY(EditAnywhere)
 	UFloatingPawnMovement* Movement;
 
 	/** Sphere Component */

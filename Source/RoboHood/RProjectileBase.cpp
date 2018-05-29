@@ -26,7 +26,7 @@ ARProjectileBase::ARProjectileBase()
 	ProjectileMovement->UpdatedComponent = GetRootComponent();
 	bReplicates = true;
 
-	static ConstructorHelpers::FObjectFinder<USoundCue> bounceCueLoader(TEXT("'/Game/Sounds/UI_Sounds/TEMP_BOUNCE_CUE.TEMP_BOUNCE_CUE'"));
+	static ConstructorHelpers::FObjectFinder<USoundCue> bounceCueLoader(TEXT("'/Game/Sounds/Weapon_Sounds/Grenade/Bounce_Cue.Bounce_Cue'"));
 	BounceSound = bounceCueLoader.Object;
 
 	static ConstructorHelpers::FObjectFinder<USoundCue> explosionCueLoader(TEXT("'/Game/Sounds/Weapon_Sounds/Rocket/Rocket_Explode_Cue.Rocket_Explode_Cue'"));

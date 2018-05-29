@@ -32,9 +32,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
 	TSubclassOf<class ARProjectileBase> ProjectileBP;
 
-	//ShootingSound.
+	//MainGun Array Sounds.
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
-	USoundCue* ShootSound;
+	TArray<USoundCue*> ShootSounds;
+
+	//Other Gun Shoot Sounds.
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
+	USoundCue* Explosion_Rocket_ShootSounds;
 
 	//ShootingSound.
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
@@ -95,7 +99,9 @@ private:
 	void PlayShootSound();
 	void PlayShootSound_Implementation();
 
+	UFUNCTION(NetMultiCast, Reliable)
 	void PlayReloadSound(USoundCue* Sound);
+	void PlayReloadSound_Implementation(USoundCue* Sound);
 
 	//Multiplayer Framework For Replicating Variables
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;

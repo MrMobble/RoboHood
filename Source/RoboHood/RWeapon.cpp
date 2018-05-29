@@ -9,6 +9,7 @@
 #include "RProjectileBase.h"
 
 //Other Includes
+#include "Math/UnrealMathUtility.h"
 #include "Sound/SoundCue.h"
 #include "Components/SceneComponent.h"
 #include "Components/PrimitiveComponent.h"
@@ -419,6 +420,14 @@ void ARWeapon::StartRecharge()
 	}
 }
 
+void ARWeapon::PlayReloadSound_Implementation(USoundCue* Sound)
+{
+	if (Sound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), Sound, GetActorLocation());
+	}
+}
+
 void ARWeapon::ServerStartRecharge_Implementation()
 {
 	StartRecharge();
@@ -473,17 +482,20 @@ void ARWeapon::PlayWeaponAnimation(UAnimationAsset* Animation)
 
 void ARWeapon::PlayShootSound_Implementation()
 {
-	if (ShootSound && MyPawn)
+	if (GetDefaultWeapon())
 	{
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ShootSound, GetMuzzleLocation());
+		int index = FMath::RandRange(0, 2);
+		if (ShootSounds[index])
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), ShootSounds[index], GetMuzzleLocation());
+		}
 	}
-}
-
-void ARWeapon::PlayReloadSound(USoundCue* Sound)
-{
-	if (Sound)
+	else
 	{
-		UGameplayStatics::PlaySound2D(GetWorld(), Sound);
+		if (Explosion_Rocket_ShootSounds)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), Explosion_Rocket_ShootSounds, GetMuzzleLocation());
+		}
 	}
 }
 

@@ -43,7 +43,9 @@ void ARBot::Shoot_Implementation()
 	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	ActorSpawnParams.Instigator = this;
 
-	ARProjectileBase* Proj = GetWorld()->SpawnActor<ARProjectileBase>(BotProjectile, (GetActorLocation() + (GetActorForwardVector()*100)), GetActorRotation(), ActorSpawnParams);
+	int randomPitch = FMath::RandRange(20, 45);
+	int randomYaw = FMath::RandRange(-15, 15);
+	ARProjectileBase* Proj = GetWorld()->SpawnActor<ARProjectileBase>(BotProjectile, (GetActorLocation() + (GetActorForwardVector()*100)), GetActorRotation() + FRotator(randomPitch, randomYaw, 0), ActorSpawnParams);
 
 	GetWorldTimerManager().SetTimer(timerHandle, this, &ARBot::Shoot, timeBetweenShots, false);
 }

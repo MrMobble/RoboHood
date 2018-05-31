@@ -113,7 +113,7 @@ public:
 	TArray<FString> Animation_Names;
 
 	UPROPERTY(EditDefaultsOnly, Category = Materials)
-	TArray<UMaterial*> Swap_Materials;
+	TArray<UMaterialInstance*> Swap_Materials;
 
 	bool SetNewMaterial(int MatIndex);
 

@@ -497,7 +497,7 @@ void ARWeapon::OnRep_BurstCounter()
 
 	if (!(BurstCounter > 0) && bUseDynamicMat)
 	{
-		IncreaseWeaponEmissive(true);
+		IncreaseWeaponEmissive(false);
 	}
 }
 
@@ -559,6 +559,7 @@ void ARWeapon::IncreaseWeaponEmissive(bool bIncrease)
 		float Value = E_BaseValue + E_Increase * (BurstCounter + (bIncrease ? 1 : 0));
 		DynamicMat->SetScalarParameterValue(FName("Intensity"), Value);
 
-		//UE_LOG(LogTemp, Warning, TEXT("Num: %d"), BurstCounter + (bIncrease ? 1 : 0));
+		UE_LOG(LogTemp, Warning, TEXT("Counter: %d"), BurstCounter);
+		UE_LOG(LogTemp, Warning, TEXT("Increase: %d"), (bIncrease ? 1 : 0));
 	}
 }

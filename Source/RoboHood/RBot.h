@@ -40,9 +40,10 @@ public:
 
 	FTimerHandle timerHandle;
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(Reliable, Server, WithValidation)
 	void Shoot();
 	void Shoot_Implementation();
+	bool Shoot_Validate();
 
 	//OnHit Function
 	UFUNCTION()

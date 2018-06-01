@@ -50,6 +50,11 @@ void ARBot::Shoot_Implementation()
 	GetWorldTimerManager().SetTimer(timerHandle, this, &ARBot::Shoot, timeBetweenShots, false);
 }
 
+bool ARBot::Shoot_Validate()
+{
+	return true;
+}
+
 // Called every frame
 void ARBot::Tick(float DeltaTime)
 {

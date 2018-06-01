@@ -5,9 +5,6 @@
 #include "GameFramework/GameState.h"
 #include "RLobbyGameState.generated.h"
 
-//Variable Defines
-#define CountDownTime 3.0f
-
 UCLASS()
 class ROBOHOOD_API ARLobbyGameState : public AGameState
 {
@@ -18,6 +15,8 @@ class ROBOHOOD_API ARLobbyGameState : public AGameState
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 public:
+
+	virtual void PreInitializeComponents() override;
 
 	//Framework Replicate Crap
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const;
@@ -40,21 +39,20 @@ public:
 
 public:
 
-	//Starts The CountDown Timer
-	void StartCountDown();
+	//void StartCountDown();
+
+	//void StopCountDown();
 
 	//This FUnction Is Called By The Timer Every 1Second
-	void CountDown();
+	//void StartMultiplayerGame();
 
-	//Handle For The CountDown Timer
-	FTimerHandle CountDownHandle;
+	//FTimerHandle TimerHandle_CountDown;
 
-	//Replicated Int
-	UPROPERTY(Replicated)
-	int32 IntCountDown;
+	//FTimerHandle TimerHandle_DefaultTimer;
 
-	//Function So Blueprints Can Get The IntCountDown Variable
-	UFUNCTION(BlueprintCallable)
-	int32 GetIntCountDown() { return IntCountDown; }
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	int32 TimeValue;
+
+	//void DefaultTimer();
 
 };

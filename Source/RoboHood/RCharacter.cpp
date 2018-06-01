@@ -192,7 +192,7 @@ bool ARCharacter::Die(class AController* Killer, class AActor* DamageCauser)
 	AController* const KilledPlayer = (Controller != NULL) ? Controller : Cast<AController>(GetOwner());
 
 	//Tell the game mode that someone died (game mode handles adding score and re spawning player).
-	GetWorld()->GetAuthGameMode<ARGameMode>()->Killed(Killer, KilledPlayer, this);
+	GetWorld()->GetAuthGameMode<ARGameMode>()->Killed(Killer, KilledPlayer, this, false);
 
 	GetCharacterMovement()->ForceReplicationUpdate();
 	
@@ -209,7 +209,7 @@ bool ARCharacter::DieEnvironment(class AController* Killer, class AActor* Damage
 	AController* const KilledPlayer = (Controller != NULL) ? Controller : Cast<AController>(GetOwner());
 
 	//Tell the game mode that someone died (game mode handles adding score and re spawning player).
-	GetWorld()->GetAuthGameMode<ARGameMode>()->Killed(Killer, KilledPlayer, this);
+	GetWorld()->GetAuthGameMode<ARGameMode>()->Killed(Killer, KilledPlayer, this, true);
 
 	GetCharacterMovement()->ForceReplicationUpdate();
 

@@ -12,6 +12,13 @@
 #include "RLobbyInterface.h"
 #include "Lobby/RLobbyPlayerController.h"
 
+void ARLobbyGameState::PreInitializeComponents()
+{
+	Super::PreInitializeComponents();
+
+	//GetWorldTimerManager().SetTimer(TimerHandle_DefaultTimer, this, &ARLobbyGameState::DefaultTimer, GetWorldSettings()->GetEffectiveTimeDilation(), true);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Server Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -20,8 +27,7 @@ void ARLobbyGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & 
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//Makes Sure The Variable Is Replicated So That Both Server And Client Can See It
-	DOREPLIFETIME(ARLobbyGameState, IntCountDown);
+	DOREPLIFETIME(ARLobbyGameState, TimeValue);
 }
 
 //Not in use
@@ -68,30 +74,42 @@ void ARLobbyGameState::MultiDisplayLoadingScreen_Implementation()
 // Start Game Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ARLobbyGameState::StartCountDown()
-{
-	IntCountDown = CountDownTime;
 
-	//Starts The CountDown Timer
-	GetWorldTimerManager().SetTimer(CountDownHandle, this, &ARLobbyGameState::CountDown, 1.0f, true, 0.0f);
-}
 
-void ARLobbyGameState::CountDown()
-{
-	//Clears The CountDown Handle So It NoLonger Ticks
-	GetWorldTimerManager().ClearTimer(CountDownHandle);
 
-	//Displays LoadingScreen For All Players + Server
-	MultiDisplayLoadingScreen();
-
-	URGameInstance* GameInstance = Cast<URGameInstance>(GetWorld()->GetGameInstance());
-	if (GameInstance)
-	{
-		URLobbyInterface* Lobby = Cast<URLobbyInterface>(GameInstance->GetLobbyWidget());
-		if (Lobby)
-		{
-			//Calls ServerTravel Event In The LobbyWidget
-			Lobby->ServerTravel();
-		}
-	}
-}
+//void ARLobbyGameState::StartCountDown()
+//{
+//	GetWorldTimerManager().SetTimer(TimerHandle_CountDown, this, &ARLobbyGameState::StartMultiplayerGame, 6.0f);
+//
+//	TimeValue = CountDownTime;
+//}
+//
+//void ARLobbyGameState::StopCountDown()
+//{
+//	//Clears The CountDown Handle So It NoLonger Ticks
+//	GetWorldTimerManager().ClearTimer(TimerHandle_CountDown);
+//
+//	GetWorldTimerManager().ClearTimer(TimerHandle_DefaultTimer);
+//}
+//
+//void ARLobbyGameState::StartMultiplayerGame()
+//{
+//	//Displays LoadingScreen For All Players + Server
+//	MultiDisplayLoadingScreen();
+//
+//	URGameInstance* GameInstance = Cast<URGameInstance>(GetWorld()->GetGameInstance());
+//	if (GameInstance)
+//	{
+//		URLobbyInterface* Lobby = Cast<URLobbyInterface>(GameInstance->GetLobbyWidget());
+//		if (Lobby)
+//		{
+//			//Calls ServerTravel Event In The LobbyWidget
+//			Lobby->ServerTravel();
+//		}
+//	}
+//}
+//
+//void ARLobbyGameState::DefaultTimer()
+//{
+//	TimeValue--; //= GetWorldTimerManager().GetTimerRemaining(TimerHandle_CountDown);
+//}

@@ -9,12 +9,13 @@
 //Class Includes
 #include "RGameInstance.h"
 #include "RLobbyGameState.h"
+#include "RLobbyGameMode.h"
 #include "RLobbyPlayerController.h"
 
 ARLobbyPlayerState::ARLobbyPlayerState()
 {
 	isReady = false;
-	DisplayName = FString("Test");
+	DisplayName = FString("DefaultName");
 }
 
 void ARLobbyPlayerState::BeginPlay()
@@ -131,12 +132,20 @@ void ARLobbyPlayerState::ServerSetDisplayName_Implementation(const FString& NewN
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void ARLobbyPlayerState::ServerCountDown_Implementation()
+void ARLobbyPlayerState::ServerCountDown_Implementation(bool bStart)
 {
-	ARLobbyGameState* LGState = Cast<ARLobbyGameState>(GetWorld()->GetGameState());
-	if (LGState)
+	//ARLobbyGameState* LGState = Cast<ARLobbyGameState>(GetWorld()->GetGameState());
+	//if (LGState)
+	//{
+	//	//Starts The CountDown On The Server
+	//	if (bStart) LGState->StartCountDown();
+	//	else LGState->StopCountDown();
+	//}
+
+	ARLobbyGameMode* LGMode = Cast<ARLobbyGameMode>(GetWorld()->GetAuthGameMode());
+	if (LGMode)
 	{
-		//Starts The CountDown On The Server
-		LGState->StartCountDown();
+		if (bStart) LGMode->StartCountDown();
+		else LGMode->StopCountDown();
 	}
 }

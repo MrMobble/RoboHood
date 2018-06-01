@@ -101,9 +101,9 @@ public:
 
 	//Only The Server Should Check If To Start Or Not
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable)
-	void ServerCountDown();
-	void ServerCountDown_Implementation();
-	bool ServerCountDown_Validate() { return true; }
+	void ServerCountDown(bool bStart);
+	void ServerCountDown_Implementation(bool bStart);
+	bool ServerCountDown_Validate(bool bStart) { return true; }
 
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	bool isReady;

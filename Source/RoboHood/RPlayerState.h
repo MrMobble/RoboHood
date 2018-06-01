@@ -28,6 +28,8 @@ public:
 	FString DisplayName;
 
 	void AddScore();
+
+	void TakeScore();
 	
 	
 };

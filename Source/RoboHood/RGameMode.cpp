@@ -59,11 +59,15 @@ AActor* ARGameMode::ChooseSpawnLocation(AController* PlayerController)
 		TArray<ARSpawnPoint*> SpawnPoints;
 		for (TActorIterator<ARSpawnPoint> Itr(GetWorld()); Itr; ++Itr)
 		{
-			SpawnPoints.Add(*Itr);
+			if (!(*Itr)->bIsUsed) SpawnPoints.Add(*Itr);
 		}
 
 		if (SpawnPoints.Num() != 0)
-			return SpawnPoints[FMath::RandRange(0, SpawnPoints.Num() - 1)];	
+		{
+			ARSpawnPoint* ChosenPoint = SpawnPoints[FMath::RandRange(0, SpawnPoints.Num() - 1)];
+			ChosenPoint->SetUsed();
+			return ChosenPoint;
+		}
 	}
 
 	return nullptr;
@@ -104,14 +108,19 @@ void ARGameMode::BeginPlay()
 	StartMatch();
 }
 
-void ARGameMode::Killed(AController* Killer, AController* KilledPlayer, APawn* KilledPawn)
+void ARGameMode::Killed(AController* Killer, AController* KilledPlayer, APawn* KilledPawn, bool Environment)
 {
 	ARPlayerState* KillerPlayerState = Killer ? Cast<ARPlayerState>(Killer->PlayerState) : NULL;
 	ARPlayerController* VictimPlayerController = KilledPlayer ? Cast<ARPlayerController>(KilledPlayer) : NULL;
 
-	if (KillerPlayerState && Killer != KilledPlayer)
+	if (KillerPlayerState && Killer != KilledPlayer && !Environment)
 	{
 		KillerPlayerState->AddScore();
+	}
+	else if (KilledPlayer && Environment)
+	{
+		ARPlayerState* KilledPlayerState = KilledPlayer ? Cast<ARPlayerState>(KilledPlayer->PlayerState) : NULL;
+		if (KilledPlayerState) KilledPlayerState->TakeScore();
 	}
 
 	DetermineGameState();
@@ -163,7 +172,7 @@ void ARGameMode::DetermineGameState()
 	for (int32 i = 0; i < MyGameState->PlayerArray.Num(); i++)
 	{
 		const float PlayerScore = MyGameState->PlayerArray[i]->Score;
-		if (PlayerScore >= 2)
+		if (PlayerScore > 5)
 		{
 			if (GetMatchState() == MatchState::InProgress)
 			{

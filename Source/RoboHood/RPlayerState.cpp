@@ -43,3 +43,8 @@ void ARPlayerState::AddScore()
 	Score++;
 }
 
+void ARPlayerState::TakeScore()
+{
+	Score--;
+}
+

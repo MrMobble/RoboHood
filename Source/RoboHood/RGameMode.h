@@ -32,7 +32,7 @@ public:
 
 	virtual void BeginPlay();
 
-	void Killed(AController* Killer, AController* KilledPlayer, APawn* KilledPawn);
+	void Killed(AController* Killer, AController* KilledPlayer, APawn* KilledPawn, bool Environment);
 
 	void DetermineMatchWinner();
 

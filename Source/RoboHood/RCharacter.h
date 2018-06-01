@@ -94,15 +94,15 @@ public:
 	FVector CameraOffset;
 
 	//Player Health Replicated
-	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(Replicated, BlueprintReadWrite)
 	float Health;
 
 	//Identifies if pawn is in its dying state
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Health)
+	UPROPERTY(BlueprintReadOnly, Category = Health)
 	uint32 bIsDying : 1;
 
 	//Player Health Replicated
-	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(Replicated, BlueprintReadWrite)
 	bool bIsDead;
 
 	//Identifies if pawn is in its dying state

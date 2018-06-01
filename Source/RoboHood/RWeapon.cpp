@@ -183,7 +183,7 @@ void ARWeapon::HandleFiring()
 		if (GetNetMode() != NM_DedicatedServer)
 		{
 			SpawnMuzzleFlash();
-			PlayShootSound();
+			ShootSound();
 		}
 
 		if (MyPawn && MyPawn->IsLocallyControlled())
@@ -480,6 +480,25 @@ void ARWeapon::PlayWeaponAnimation(UAnimationAsset* Animation)
 	}
 }
 
+void ARWeapon::ShootSound()
+{
+	if (GetDefaultWeapon())
+	{
+		int index = FMath::RandRange(0, 2);
+		if (ShootSounds[index])
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), ShootSounds[index], GetMuzzleLocation());
+		}
+	}
+	else
+	{
+		if (Explosion_Rocket_ShootSounds)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), Explosion_Rocket_ShootSounds, GetMuzzleLocation());
+		}
+	}
+}
+
 void ARWeapon::PlayShootSound_Implementation()
 {
 	if (GetDefaultWeapon())
@@ -504,7 +523,7 @@ void ARWeapon::OnRep_BurstCounter()
 	if (BurstCounter > 0)
 	{
 		SpawnMuzzleFlash();
-		PlayShootSound();
+		ShootSound();
 	}
 
 	if (!(BurstCounter > 0) && bUseDynamicMat)

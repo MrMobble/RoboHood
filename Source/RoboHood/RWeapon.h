@@ -95,6 +95,8 @@ protected:
 
 private:
 
+	void ShootSound();
+
 	UFUNCTION(NetMultiCast, Reliable)
 	void PlayShootSound();
 	void PlayShootSound_Implementation();

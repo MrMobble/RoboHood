@@ -70,7 +70,9 @@ public:
 
 	void TurnOff() override;
 
+	UPROPERTY(EditDefaultsOnly)
 	USoundCue* ImpactSound;
+
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayImpactSound();
 	void PlayImpactSound_Implementation();

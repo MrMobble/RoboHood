@@ -51,8 +51,8 @@ ARCharacter::ARCharacter()
 	TPPCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	TPPCamera->bUsePawnControlRotation = false;
 
-	static ConstructorHelpers::FObjectFinder<USoundCue> impactCueLoader(TEXT("'/Game/Sounds/Character_Sounds/Impact_Cue.Impact_Cue'"));
-	ImpactSound = impactCueLoader.Object;
+	//static ConstructorHelpers::FObjectFinder<USoundCue> impactCueLoader(TEXT("/Game/Sounds/Character_Sounds/Impact_Cue.Impact_Cue"));
+	//ImpactSound = impactCueLoader.Object;
 
 	//FPPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FPPCamera"));
 	//FPPCamera->SetupAttachment(GetMesh());
@@ -156,6 +156,7 @@ float ARCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEve
 
 	if (ActualDamage > 0.f)
 	{
+
 		PlayImpactSound();
 		Health -= ActualDamage;
 		if (Health <= 0.f)
@@ -175,8 +176,10 @@ float ARCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEve
 
 void ARCharacter::PlayImpactSound_Implementation() 
 {
-	if(ImpactSound)
-	UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, GetActorLocation());
+	if(ImpactSound) 
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, GetActorLocation());
+	}
 }
 
 //Tells game mode that you died.
